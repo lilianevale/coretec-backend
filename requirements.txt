@@ -1,0 +1,8 @@
+Flask
+numpy
+matplotlib
+pandas
+openpyxl
+openai
+flasgger
+flask-cors
