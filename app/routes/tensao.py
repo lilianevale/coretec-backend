@@ -28,14 +28,17 @@ def tensao_elastica():
         m_sd = float(data.get('fletor1'))           # Momento (kNm)
 
         # Cálculo
-        sigma_t, sigma_b = tensao_topo_base(
+        sigma_t, sigma_b, imagem_url = tensao_topo_base(
             a_c * 1E-4, i_c * 1E-8,
             y_t * 1E-2, y_b * 1E-2,
             e_p * 1E-2, p_id, m_sd
         )
 
-        print(f"[POST /tensaoelastica] sigma_t: {sigma_t}, sigma_b: {sigma_b}")
-        return jsonify({'message': 'Cálculo realizado com sucesso!'})
+        return jsonify({
+            'sigma_t1': sigma_t,
+            'sigma_b1': sigma_b,
+            'imagem_url': imagem_url,
+        })
 
     elif request.method == 'GET':
         response_data = {
@@ -66,11 +69,12 @@ def tensao_elastica_vao():
             df = pd.read_excel(file)
             print(f"[POST /tensaoelasticavao] Arquivo recebido: {df.shape}")
 
-            sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv = tensoes_vao_completo(
+            sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv, imagem_url = tensoes_vao_completo(
                 df, a_c * 1E-4, i_c * 1E-8, y_t * 1E-2, y_b * 1E-2
             )
 
             return jsonify({
+                'imagem_url': imagem_url,
                 'sigma_t_vazio1': sigma_t_vazio,
                 'sigma_b_vazio1': sigma_b_vazio,
                 'sigma_t_serv1': sigma_t_serv,

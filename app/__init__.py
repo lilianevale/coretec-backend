@@ -11,6 +11,7 @@ def create_app():
     from .routes.concreto import concreto_bp
     from .routes.tensao import tensao_bp
     from .routes.armadura import armadura_bp
+    from .routes.fluencia import fluencia_bp
 
     app.register_blueprint(magnel_bp)
     app.register_blueprint(pretracao_bp)
@@ -18,5 +19,6 @@ def create_app():
     app.register_blueprint(concreto_bp)
     app.register_blueprint(tensao_bp)
     app.register_blueprint(armadura_bp)
+    app.register_blueprint(fluencia_bp)
 
     return app

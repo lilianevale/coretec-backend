@@ -1,6 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import io
+import base64
+import os
+import uuid
+
 
 def diagrama_magnel(a_c, y_t, y_b, i_c, sigma_max, sigma_min, m_sd_inicial):
     w_t = i_c / y_t
@@ -22,7 +27,6 @@ def diagrama_magnel(a_c, y_t, y_b, i_c, sigma_max, sigma_min, m_sd_inicial):
     print("equação 3:", eq_3)
 
     return eq_0, eq_1, eq_2, eq_3
-
 
 
 def perda_deslizamento_ancoragem(p_it0, sigma_pit0, a_slcp, l_0, delta_anc, e_scp):
@@ -56,6 +60,7 @@ def perda_deslizamento_ancoragem(p_it0, sigma_pit0, a_slcp, l_0, delta_anc, e_sc
     deltaperc = (deltap / p_it0) * 100
 
     return deltaperc, p_it1, sigma_pit1
+
 
 def perda_relax_armadura(p_it0, sigma_pit0, t_0, t_1, temp, f_pk, a_slcp, tipo_arm, tipo_aco):
     """Esta função determina a perda de protensão por relaxação da armadura de protensão em peças de concreto protendido.
@@ -98,6 +103,7 @@ def perda_relax_armadura(p_it0, sigma_pit0, t_0, t_1, temp, f_pk, a_slcp, tipo_a
     deltaperc = (deltap / p_it0) * 100
 
     return deltaperc, p_it1, sigma_pit1, psi, psi_1000
+
 
 def tabela_psi1000(tipo_arm, tipo_aco, rho_sigma):
     """Esta função encontra o fator Ψ_1000 para cálculo da relaxação.
@@ -268,62 +274,70 @@ def interpolador(x_1, x_2, x_k, y_1, y_2):
 
 
 def tensoes_vao_completo(df, a_c, i_c, y_t, y_b):
-    """Determina as tensões de flexão no topo e na base da seção considerando a carga p_sd e protensão e uma combinação de momentos m_sd em um vão completo de viga.
-
-    Args:
-        df (DataFrame): DataFrame com os dados da peça de concreto protendido:'
-        a_c (Float): Área da seção transversal (m2)
-        i_c (Float): Inércia da seção transversal (m4)
-        y_t (Float): Distância do topo da seção até o centro de gravidade (m)
-        y_b (Float): Distância da base da seção até o centro de gravidade (m)
-
-    Returns:
-        sigma_t_vazio (List): Tensão de flexão no topo da seção estado vazio (kPa)
-        sigma_b_vazio (List): Tensão de flexão na base da seção estado vazio (kPa)
-        sigma_t_serv (List): Tensão de flexão no topo da seção estado serviço (kPa)
-        sigma_b_serv (List): Tensão de flexão na base da seção estado serviço (kPa)
-        fig (Figure): Figura com o diagrama de tensões
-    """
-
     sigma_b_vazio = []
     sigma_t_vazio = []
     sigma_b_serv = []
     sigma_t_serv = []
-    for i in range(len(df)):
-        topo_vazio, base_vazio, _ = tensao_topo_base(
-            a_c, i_c, y_t, y_b, df['e_p (cm)'][i]*1E-2, df['p_Sd t=0 (kN)'][i], df['m_Sd,gpp (kNm)'][i])
-        sigma_t_vazio.append(topo_vazio)
-        sigma_b_vazio.append(base_vazio)
-        topo_serv, base_serv, _ = tensao_topo_base(
-            a_c, i_c, y_t, y_b, df['e_p (cm)'][i]*1E-2, df['p_Sd t=∞ (kN)'][i], df['m_Sd,gpp (kNm)'][i]+df['m_Sd,gext (kNm)'][i]+df['m_Sd,q (kNm)'][i])
-        sigma_t_serv.append(topo_serv)
-        sigma_b_serv.append(base_serv)
 
-    # Grafico 1 - ATO
-    fig, (ax1, ax2) = plt.subplots(
-        2, 1, sharex=True, sharey=True, figsize=(8, 10))
-    ax1.plot(df['x (cm)'], sigma_t_vazio,
-             color='blue', linestyle='-', linewidth=2)
-    ax1.plot(df['x (cm)'], sigma_b_vazio,
-             color='red', linestyle='-', linewidth=2)
-    ax1.set_title('Tensões na seção transversal - Estado Vazio', size=14)
-    ax1.set_ylabel('Tensão (kPa)')
-    ax1.legend(['Topo', 'Base', 'Limite tração', 'Limite compressão'])
-    ax1.grid(True)
+    try:
+        for i in range(len(df)):
+            # Conversão das unidades da planilha (cm -> m)
+            e_p = df['e_p (cm)'][i] * 1E-2
+            p_sd_0 = df['p_Sd t=0 (kN)'][i]
+            p_sd_inf = df['p_Sd t=∞ (kN)'][i]
+            m_sd_0 = df['m_Sd,gpp (kNm)'][i]
+            m_sd_total = (
+                df['m_Sd,gpp (kNm)'][i]
+                + df['m_Sd,gext (kNm)'][i]
+                + df['m_Sd,q (kNm)'][i]
+            )
 
-    # Grafico 2 - SERV
-    ax2.plot(df['x (cm)'], sigma_t_serv,
-             color='blue', linestyle='-', linewidth=2)
-    ax2.plot(df['x (cm)'], sigma_b_serv,
-             color='red', linestyle='-', linewidth=2)
-    ax2.set_title('Tensões na seção transversal - Estado Serviço', size=14)
-    ax2.set_xlabel('Distância (cm)')
-    ax2.set_ylabel('Tensão (kPa)')
-    ax2.legend(['Topo', 'Base'])
-    ax2.grid(True)
-    fig.savefig("./cliente/src/pages/teste1.png", dpi=300, bbox_inches='tight')
-    fig.show
-    return sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv
+            # Estado vazio
+            topo_vazio, base_vazio, _ = tensao_topo_base(
+                a_c, i_c, y_t, y_b, e_p, p_sd_0, m_sd_0
+            )
+            sigma_t_vazio.append(topo_vazio)
+            sigma_b_vazio.append(base_vazio)
+
+            # Estado serviço
+            topo_serv, base_serv, _ = tensao_topo_base(
+                a_c, i_c, y_t, y_b, e_p, p_sd_inf, m_sd_total
+            )
+            sigma_t_serv.append(topo_serv)
+            sigma_b_serv.append(base_serv)
+
+        # Geração do gráfico
+        fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
+
+        ax1.plot(df['x (cm)'], sigma_t_vazio, 'b-', label='Topo')
+        ax1.plot(df['x (cm)'], sigma_b_vazio, 'r-', label='Base')
+        ax1.set_title('Tensões - Estado Vazio')
+        ax1.set_ylabel('Tensão (kPa)')
+        ax1.grid(True)
+        ax1.legend()
+
+        ax2.plot(df['x (cm)'], sigma_t_serv, 'b-', label='Topo')
+        ax2.plot(df['x (cm)'], sigma_b_serv, 'r-', label='Base')
+        ax2.set_title('Tensões - Estado de Serviço')
+        ax2.set_xlabel('Distância (cm)')
+        ax2.set_ylabel('Tensão (kPa)')
+        ax2.grid(True)
+        ax2.legend()
+
+        # Salvar imagem na pasta do projeto
+        nome_arquivo = f"vao_{uuid.uuid4().hex[:8]}.png"
+        pasta_destino = os.path.join("app", "static", "imagens")
+        os.makedirs(pasta_destino, exist_ok=True)
+        caminho_completo = os.path.join(pasta_destino, nome_arquivo)
+        fig.savefig(caminho_completo, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+
+        imagem_url = f"/static/imagens/{nome_arquivo}"
+        return sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv, imagem_url
+
+    except Exception as e:
+        print(f"[ERRO] Falha no cálculo das tensões no vão completo: {e}")
+        return [], [], [], [], None
 
 
 def tensao_topo_base(a_c, i_c, y_t, y_b, e_p, p_sd, m_sd):
@@ -395,11 +409,17 @@ def tensao_topo_base(a_c, i_c, y_t, y_b, e_p, p_sd, m_sd):
     ax.text(-5, 0, f'$\sigma_b=${sigma_b:.2f} kPa',
             ha='left', va='center', size=14)
 
-    fig.savefig("/Users/lilianevale/Documents/UFG/react/Tutorial-Project/client/src/pages/teste.png",
-                dpi=300, bbox_inches='tight')
-    fig.show
+    nome_arquivo = f"tensao_{uuid.uuid4().hex[:8]}.png"
+    pasta_destino = os.path.join("app", "static", "imagens")
+    os.makedirs(pasta_destino, exist_ok=True)  # Garante que a pasta exista
+    caminho_completo = os.path.join(pasta_destino, nome_arquivo)
 
-    return sigma_t, sigma_b
+    fig.savefig(caminho_completo, dpi=300, bbox_inches='tight')
+    plt.close(fig)  # Libera memória
+
+    # Retorna caminho relativo
+    imagem_url = f"/static/imagens/{nome_arquivo}"
+    return sigma_t, sigma_b, imagem_url
 
 
 def tensao_momento(w_t, w_b, m_s):
@@ -566,6 +586,8 @@ def calculo_tempo_ficticio(delta_tempo, temperatura, tipo_perda, tipo_endurecime
             alpha = 2
         elif tipo_endurecimento == 'RÁPIDO':
             alpha = 3
+        else:
+            alpha = 2
 
     # Determinação da idade fictícia do concreto
     t_fic = alpha * ((temperatura + 10) / 30) * delta_tempo
@@ -668,3 +690,116 @@ def perda_deformacao_imediata_concreto_pre_tracao(e_scp, e_ccp, p_it0, sigma_pit
     deltaperc = (deltap / p_it0) * 100
 
     return deltaperc, p_it1, sigma_pit1
+
+
+def perda_fluencia_concreto(p_it0, sigma_pit0, a_slcp, a_c, mu_ar, abatimento, umidade, tipo_endurecimento, temp, e_scp, e_ccpt1, sigma_cabo, t_0, t_1, f_ck0, f_ck):
+    """Esta função determina a perda de protensão devido ao efeito de fluência.
+
+    Args:
+        p_it0 (Float): Carga inicial de protensão (kN)
+        sigma_pit0 (Float): Tensão inicial de protensão (kPa)
+        a_slcp (Float): Área total de armadura protendida (m2)
+        a_c (Float): Área bruta da seção (m2)
+        mu_ar (Float): Parte do perímetro externo da seção em contato com ar (m)
+        abatimento (Float): Abatimento ou slump test do concreto (m)
+        umidade (Float): Umidade do ambiente no intervalo de tempo de análise (%)
+        tipo_endurecimento (String):  Tipo da perda que deseja-se calcular a correção do tempo: 'LENTO' = Endurecimento lento AF250, AF320, POZ250, 'NORMAL' = Endurecimento normal CP250, CP320, CP400, 'RÁPIDO' = Endurecimento rápido aderência
+        temp (Float): temperatura de projeto (°C)
+        e_scp (Float): Módulo de elasticidade do aço protendido (kPa)
+        e_ccpt1 (Float): Módulo de deformação tangente do concreto na idade t1 (kPa)
+        sigma_cabo (Float): Tensões no nível dos cabos (kPa)
+        t_0 (Float): tempo inicial de análise sem correção da temperatura (dias)
+        t_1 (Float): tempo final de análise sem correção da temperatura (dias)
+        f_ck0 (Float): Resistência característica à compressão na idade t0 (kPa)
+        f_ck (Float): Resistência característica à compressão aos 28 dias (kPa)
+
+    Returns:
+        phi (Float): Fator de fluência total
+        deltaperc (Float): Perda percentual de protensão (%)
+        p_it1 (Float): Carga final de protensão (kN)
+        sigma_pit1 (Float): Tensão final de protensão após a perda (kPa)
+    """
+
+    # Coeficiente de fluência rápida irreversível
+    relacao_fck = f_ck0 / f_ck
+    f_ck /= 1E3
+    if f_ck <= 45:
+        phi_a = 0.80 * (1 - relacao_fck)
+    elif f_ck > 45:
+        phi_a = 1.40 * (1 - relacao_fck)
+    f_ck *= 1E3
+
+    # Coeficiente de fluência lenta irreversível
+    phi_1c = 1.00 * (4.45 - 0.035 * umidade)
+    # intervalo 0.05 <= abatimento <= 0.09
+    if umidade <= 90 and ((abatimento >= 0.05 and abatimento <= 0.09)):
+        phi_1c *= 1.00
+    # intervalo 0.00 <= abatimento <= 0.04
+    elif umidade <= 90 and ((abatimento >= 0.00 and abatimento <= 0.04)):
+        phi_1c *= 0.75
+    # intervalo 10.0 <= abatimento <= 15.0
+    elif umidade <= 90 and ((abatimento >= 0.10 and abatimento <= 0.15)):
+        phi_1c *= 1.25
+    h_fic = calculo_h_ficticio(umidade, a_c, mu_ar)
+    phi_2c = (0.42 + h_fic) / (0.20 + h_fic)
+    f_ck /= 1E3
+    if f_ck <= 45:
+        phi_finf = phi_1c * phi_2c
+    elif f_ck > 45:
+        phi_finf = 0.45 * phi_1c * phi_2c
+    f_ck *= 1E3
+
+    # Coeficiente de fluência lenta reversível
+    phi_dinf = 0.40
+
+    # Coeficiente de fluência lenta reversível
+    beta_d = (t_1 - t_0 + 20) / (t_1 - t_0 + 70)
+
+    # Coeficiente de fluência lenta irreversível
+    t_0fic = calculo_tempo_ficticio(t_0, temp, 'FLUÊNCIA', tipo_endurecimento)
+    beta_f0, _, _, _, _ = betaf_fluencia(t_0fic, h_fic)
+
+    t_1fic = calculo_tempo_ficticio(t_1, temp, 'FLUÊNCIA', tipo_endurecimento)
+    beta_f1, _, _, _, _ = betaf_fluencia(t_1fic, h_fic)
+
+    # Coeficiente de fluência total
+    phi = phi_a + phi_finf * (beta_f1 - beta_f0) + phi_dinf * beta_d
+
+    # Perdas de protensão
+    epsilon_cs = sigma_cabo / e_ccpt1 * phi
+    deltasigma = e_scp * epsilon_cs
+    sigma_pit1 = sigma_pit0 - deltasigma
+    deltap = deltasigma * a_slcp
+    p_it1 = p_it0 - deltap
+    deltaperc = (deltap / p_it0) * 100
+
+    return phi, deltaperc, p_it1, sigma_pit1
+
+
+def betaf_fluencia(t_fic, h_fic):
+    """Esta função determina o coeficiente de retração β_F.
+
+    Args:
+        t_fic (Float): tempo de projeto corrigido em função da temperatura (dias)
+        h_fic (Float): altura fictícia da peça para cálculo de fluência e retração (m)
+
+    Returns:
+        beta_f (Float): Coeficiente de fluência
+        a (Float): Coeficiente A
+        b (Float): Coeficiente B
+        c (Float): Coeficiente C
+        d (Float): Coeficiente D
+    """
+
+    # Coeficientes A até E
+    a = 42 * pow(h_fic, 3) - 350 * pow(h_fic, 2) + 588 * h_fic + 113
+    b = 768 * pow(h_fic, 3) - 3060 * pow(h_fic, 2) + 3234 * h_fic - 23
+    c = -200 * pow(h_fic, 3) + 13 * pow(h_fic, 2) + 1090 * h_fic + 183
+    d = 7579 * pow(h_fic, 3) - 31916 * pow(h_fic, 2) + 35343 * h_fic + 1931
+
+    # Determinação do BETA_F
+    aux_0 = pow(t_fic, 2) + a * t_fic + b
+    aux_1 = pow(t_fic, 2) + c * t_fic + d
+    beta_f = aux_0 / aux_1
+
+    return beta_f, a, b, c, d
