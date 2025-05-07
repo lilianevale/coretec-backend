@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.utils.calculos import diagrama_magnel
+import pandas as pd
 
 magnel_bp = Blueprint('magnel', __name__)
 

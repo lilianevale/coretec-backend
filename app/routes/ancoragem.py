@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.utils.calculos import perda_deslizamento_ancoragem
+import pandas as pd
 
 ancoragem_bp = Blueprint('ancoragem', __name__)
 
