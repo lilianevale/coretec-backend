@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.utils.calculos import perda_retracao_concreto
+import pandas as pd
 
 concreto_bp = Blueprint('concreto', __name__)
 
