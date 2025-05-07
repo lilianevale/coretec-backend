@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.utils.calculos import perda_relax_armadura
+import pandas as pd
 
 armadura_bp = Blueprint('armadura', __name__)
 
