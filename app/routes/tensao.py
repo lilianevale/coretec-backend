@@ -83,6 +83,7 @@ def tensao_elastica_vao():
 
     elif request.method == 'GET':
         response_data = {
+            'imagem_url': imagem_url,
             'sigma_t_vazio1': sigma_t_vazio,
             'sigma_b_vazio1': sigma_b_vazio,
             'sigma_t_serv1': sigma_t_serv,
