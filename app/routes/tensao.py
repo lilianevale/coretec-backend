@@ -42,6 +42,7 @@ def tensao_elastica():
 
     elif request.method == 'GET':
         response_data = {
+            'imagem_url': imagem_url,
             'sigma_t1': sigma_t,
             'sigma_b1': sigma_b
         }
