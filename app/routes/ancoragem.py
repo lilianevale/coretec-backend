@@ -32,7 +32,7 @@ def handle_ancoragem():
         return jsonify({
             'deltaperc': deltaperc,
             'p_it1': p_it1,
-            'sigma_pit1': sigma_pit1,
+            'sigma_pit1': sigma_pit1
         })
 
     elif request.method == 'GET':
