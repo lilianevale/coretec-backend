@@ -37,7 +37,7 @@ def tensao_elastica():
         return jsonify({
             'sigma_t1': sigma_t,
             'sigma_b1': sigma_b,
-            'imagem_url': imagem_url,
+            'imagem_url': imagem_url
         })
 
     elif request.method == 'GET':
@@ -79,7 +79,7 @@ def tensao_elastica_vao():
                 'sigma_t_vazio1': sigma_t_vazio,
                 'sigma_b_vazio1': sigma_b_vazio,
                 'sigma_t_serv1': sigma_t_serv,
-                'sigma_b_serv1': sigma_b_serv,
+                'sigma_b_serv1': sigma_b_serv
             })
 
     elif request.method == 'GET':
