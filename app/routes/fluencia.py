@@ -38,7 +38,7 @@ def handle_user_data7():
             'deltaperc1': deltaperc,
             'sigma_pit11': sigma_pit1,
             'p_it11': p_it1,
-            'phi1': phi,
+            'phi1': phi
 
         }
         print("response_data fluencia", response_data)
@@ -47,7 +47,7 @@ def handle_user_data7():
         'deltaperc1': deltaperc,
         'sigma_pit11': sigma_pit1,
         'p_it11': p_it1,
-        'phi1': phi,
+        'phi1': phi
 
     }
    
