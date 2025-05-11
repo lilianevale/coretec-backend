@@ -88,6 +88,6 @@ def tensao_elastica_vao():
             'sigma_t_vazio1': sigma_t_vazio,
             'sigma_b_vazio1': sigma_b_vazio,
             'sigma_t_serv1': sigma_t_serv,
-            'sigma_b_serv1': sigma_b_serv,
+            'sigma_b_serv1': sigma_b_serv
         }
         return jsonify(response_data)
