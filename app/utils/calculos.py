@@ -333,7 +333,7 @@ def tensoes_vao_completo(df, a_c, i_c, y_t, y_b):
         plt.close(fig)
 
         imagem_url = f"/static/imagens/{nome_arquivo}"
-        return sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv
+        return sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv, imagem_url
 
     except Exception as e:
         print(f"[ERRO] Falha no cálculo das tensões no vão completo: {e}")
