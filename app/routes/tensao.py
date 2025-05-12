@@ -5,7 +5,7 @@ from app.utils.calculos import tensao_topo_base, tensoes_vao_completo
 tensao_bp = Blueprint('tensao', __name__)
 
 # Variáveis globais
-sigma_t = sigma_b = 0
+sigma_t = sigma_b = 0, imagem_url=None
 sigma_t_vazio = sigma_b_vazio = sigma_t_serv = sigma_b_serv = []
 df = None
 response_data = {}
@@ -13,7 +13,7 @@ response_data = {}
 
 @tensao_bp.route('/tensaoelastica', methods=['POST', 'GET'])
 def tensao_elastica():
-    global sigma_t, sigma_b, response_data
+    global sigma_t, sigma_b, response_data, imagem_url
 
     if request.method == 'POST':
         data = request.get_json()
@@ -51,7 +51,7 @@ def tensao_elastica():
 
 @tensao_bp.route('/tensaoelasticavao', methods=['POST', 'GET'])
 def tensao_elastica_vao():
-    global sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv, df, response_data
+    global sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv, df, response_data, imagem_url
 
     if request.method == 'POST':
         # Recebe os dados do formulário multipart/form-data
