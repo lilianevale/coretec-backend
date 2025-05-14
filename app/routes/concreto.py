@@ -54,7 +54,7 @@ def handle_concreto():
 
     elif request.method == 'GET':
         response_data = {
-             'deltaperc':  f'{deltaperc:.2f} %',
+            'deltaperc':  f'{deltaperc:.2f} %',
             'p_it1':  f'{p_it1:.3e} kN',
             'sigma_pit1': f'{sigma_pit1/1000:.3e} MPa',
             'eps_cs': f'{eps_cs:.3e}'
