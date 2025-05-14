@@ -35,19 +35,19 @@ def handle_user_data7():
     elif request.method == 'GET':
 
         response_data = {
-            'deltaperc1': deltaperc,
-            'sigma_pit11': sigma_pit1,
-            'p_it11': p_it1,
-            'phi1': phi
+            'deltaperc1':  f'{deltaperc:.2f} %',
+            'sigma_pit11': f'{sigma_pit1/1000:.3e} MPa',
+            'p_it11':  f'{p_it1:.3e} kN',
+            'phi1': f'{phi:.3e}'
 
         }
         print("response_data fluencia", response_data)
 
     response_data = {
-        'deltaperc1': deltaperc,
-        'sigma_pit11': sigma_pit1,
-        'p_it11': p_it1,
-        'phi1': phi
+        'deltaperc1':  f'{deltaperc:.2f} %',
+        'sigma_pit11': f'{sigma_pit1/1000:.3e} MPa',
+        'p_it11':  f'{p_it1:.3e} kN',
+        'phi1': f'{phi:.3e}'
 
     }
    
