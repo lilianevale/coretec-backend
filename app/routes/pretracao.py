@@ -38,16 +38,16 @@ def handle_pretracao():
         print(f"[POST /pretracao] deltaperc: {deltaperc}, p_it1: {p_it1}, sigma_pit1: {sigma_pit1}")
 
         return jsonify({
-            'deltaperc': deltaperc,
-            'p_it1': p_it1,
-            'sigma_pit1': sigma_pit1
+            'deltaperc': f'{deltaperc:.2f} %',
+            'p_it1': f'{p_it1:.3e} kN',
+            'sigma_pit1':  f'{sigma_pit1/1000 :.3e} MPa'
         })
 
     elif request.method == 'GET':
         response_data = {
-            'deltaperc': deltaperc,
-            'p_it1': p_it1,
-            'sigma_pit1': sigma_pit1
+            'deltaperc': f'{deltaperc:.2f} %',
+            'p_it1': f'{p_it1:.3e} kN',
+            'sigma_pit1':  f'{sigma_pit1/1000 :.3e} MPa'
         }
 
         return jsonify(response_data)
