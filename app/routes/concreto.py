@@ -46,18 +46,18 @@ def handle_concreto():
             f"[POST /concreto] deltaperc: {deltaperc}, p_it1: {p_it1}, sigma_pit1: {sigma_pit1}, eps_cs: {eps_cs}")
 
         return jsonify({
-            'deltaperc': deltaperc,
-            'p_it1': p_it1,
-            'sigma_pit1': sigma_pit1,
-            'eps_cs': eps_cs
+            'deltaperc':  f'{deltaperc:.2f} %',
+            'p_it1':  f'{p_it1:.3e} kN',
+            'sigma_pit1': f'{sigma_pit1/1000:.3e} MPa',
+            'eps_cs': f'{eps_cs:.3e}'
         })
 
     elif request.method == 'GET':
         response_data = {
-            'deltaperc': deltaperc,
-            'p_it1': p_it1,
-            'sigma_pit1': sigma_pit1,
-            'eps_cs': eps_cs
+             'deltaperc':  f'{deltaperc:.2f} %',
+            'p_it1':  f'{p_it1:.3e} kN',
+            'sigma_pit1': f'{sigma_pit1/1000:.3e} MPa',
+            'eps_cs': f'{eps_cs:.3e}'
         }
 
         return jsonify(response_data)
