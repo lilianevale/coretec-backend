@@ -38,20 +38,26 @@ def handle_armadura():
             f"[POST /armadura] deltaperc: {deltaperc}, p_it1: {p_it1}, sigma_pit1: {sigma_pit1}, psi: {psi}, psi_1000: {psi_1000}")
 
         return jsonify({
-            'deltaperc1': deltaperc,
-            'p_it11': p_it1,
-            'sigma_pit11': sigma_pit1,
-            'psi1': psi,
-            'psi_10001': psi_1000
+            response_data = { 
+            'deltaperc1' : f'{deltaperc:.2f} %',
+            'sigma_pit11': f'{sigma_pit1/1000:.3e} MPa',
+            'p_it11' : f'{p_it1:.3e} kN',
+            'psi1':f'{psi:.3e} %',
+            'psi_10001':f'{psi_1000:.3e} %'
+
+        }
         })
 
     elif request.method == 'GET':
         response_data = {
-            'deltaperc1': deltaperc,
-            'p_it11': p_it1,
-            'sigma_pit11': sigma_pit1,
-            'psi1': psi,
-            'psi_10001': psi_1000
+            response_data = { 
+            'deltaperc1' : f'{deltaperc:.2f} %',
+            'sigma_pit11': f'{sigma_pit1/1000:.3e} MPa',
+            'p_it11' : f'{p_it1:.3e} kN',
+            'psi1':f'{psi:.3e} %',
+            'psi_10001':f'{psi_1000:.3e} %',
+
+        }
         }
 
         return jsonify(response_data)
