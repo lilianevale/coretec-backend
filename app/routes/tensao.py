@@ -42,9 +42,10 @@ def tensao_elastica():
 
     elif request.method == 'GET':
         response_data = {
-             'sigma_t1': f'{sigma_t/1000 :.3e} MPa',
+            'sigma_t1': f'{sigma_t/1000 :.3e} MPa',
             'sigma_b1': f'{sigma_b/1000 :.3e} MPa',
-            'sigma_b1': sigma_b
+            'imagem_url': imagem_url
+
         }
         return jsonify(response_data)
 
