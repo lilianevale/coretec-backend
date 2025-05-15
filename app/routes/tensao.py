@@ -5,7 +5,8 @@ from app.utils.calculos import tensao_topo_base, tensoes_vao_completo
 tensao_bp = Blueprint('tensao', __name__)
 
 # Variáveis globais
-sigma_t = sigma_b = 0, imagem_url=None
+sigma_t = sigma_b = 0
+imagem_url=None
 sigma_t_vazio = sigma_b_vazio = sigma_t_serv = sigma_b_serv = []
 df = None
 response_data = {}
