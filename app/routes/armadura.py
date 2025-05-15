@@ -49,7 +49,6 @@ def handle_armadura():
         })
 
     elif request.method == 'GET':
-        response_data = {
             response_data = { 
             'deltaperc1' : f'{deltaperc:.2f} %',
             'sigma_pit11': f'{sigma_pit1/1000:.3e} MPa',
@@ -57,7 +56,6 @@ def handle_armadura():
             'psi1':f'{psi:.3e} %',
             'psi_10001':f'{psi_1000:.3e} %',
 
-        }
         }
 
         return jsonify(response_data)
