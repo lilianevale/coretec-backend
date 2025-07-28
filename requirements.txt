@@ -6,3 +6,6 @@ openpyxl
 openai
 flasgger
 flask-cors
+flask-sqlalchemy 
+flask-jwt-extended 
+pymysql
