@@ -7,26 +7,43 @@ from datetime import timedelta
 
 auth_bp = Blueprint('auth', __name__)
 
+import re
+
+def generate_username(name):
+    base_username = re.sub(r'\s+', '.', name.strip().lower())
+    base_username = re.sub(r'[^a-z0-9\.]', '', base_username)  # remove caracteres especiais
+    username = base_username
+    counter = 1
+
+    while User.query.filter_by(username=username).first():
+        counter += 1
+        username = f"{base_username}{counter}"
+
+    return username
+
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
     name = data.get("name")
     email = data.get("email")
-    username = data.get("username")
     password = data.get("password")
 
-    if User.query.filter_by(username=username).first():
-        return jsonify({"msg": "Usuário já existe"}), 400
-    
     if User.query.filter_by(email=email).first():
-        return jsonify({"msg": "Usuário já existe"}), 400
+        return jsonify({"msg": "Usuário já existe com este e-mail"}), 400
+
+    username = generate_username(name)
 
     hashed = generate_password_hash(password)
     user = User(username=username, password=hashed, name=name, email=email)
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({"msg": "Usuário criado com sucesso"}), 201
+    return jsonify({
+        "msg": "Usuário criado com sucesso",
+        "username": username
+    }), 201
+
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
