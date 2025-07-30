@@ -9,3 +9,4 @@ flask-cors
 flask-sqlalchemy 
 flask-jwt-extended 
 pymysql
+Flask-Mail

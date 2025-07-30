@@ -2,7 +2,10 @@ from flask import Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
+from flask_mail import Mail
 from .models import db
+
+mail = Mail()
 
 def create_app():
     app = Flask(__name__)
@@ -15,9 +18,18 @@ def create_app():
     # Configuração do JWT
     app.config["JWT_SECRET_KEY"] = "Term228687535@"
     jwt = JWTManager(app)
+    
+    # Configuração do e-mail
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # ou outro servidor
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = 'coretectools.ufcat@gmail.com'  # coloque seu e-mail aqui
+    app.config['MAIL_PASSWORD'] = 'legvkwgyjkducauk'     # app password ou senha real
+    app.config['MAIL_DEFAULT_SENDER'] = 'ezequiel.pires082000@gmail.com'
 
     # Inicializa DB
     db.init_app(app)
+    mail.init_app(app)
     
     from .routes.magnel import magnel_bp
     from .routes.pretracao import pretracao_bp
