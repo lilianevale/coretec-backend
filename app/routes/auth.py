@@ -26,6 +26,7 @@ def generate_username(name):
 def register():
     data = request.get_json()
     name = data.get("name")
+    role = data.get("role")
     email = data.get("email")
     password = data.get("password")
 
@@ -35,7 +36,7 @@ def register():
     username = generate_username(name)
 
     hashed = generate_password_hash(password)
-    user = User(username=username, password=hashed, name=name, email=email)
+    user = User(username=username, password=hashed, name=name, email=email, role=role)
     db.session.add(user)
     db.session.commit()
 
@@ -73,5 +74,6 @@ def profile():
         "id": user.id,
         "name": user.name,
         "username": user.username,
-        "email": user.email
+        "email": user.email,
+        "role": user.role.value
     }), 200
