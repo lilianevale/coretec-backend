@@ -1,7 +1,7 @@
 # Filename - server.py
 
 # Import flask and datetime module for showing date and time
-import openpyxl
+import openpyxl 
 import openai
 from flask import Flask, jsonify, render_template, request, session
 import datetime
@@ -13,55 +13,20 @@ import matplotlib
 matplotlib.pyplot.switch_backend('Agg')
 
 
-x = datetime.datetime.now()
+import os
+from flask_cors import CORS
+from werkzeug.utils import secure_filename
+
+# Define the folder where uploads will be stored
+UPLOAD_FOLDER = 'uploads'
+# Define allowed file extensions
+ALLOWED_EXTENSIONS = {'ppt', 'pptx'}
 
 # Initializing flask app
 app = Flask(__name__)
 
 response_data = {}
 # Route for seeing a data
-
-
-@app.route('/data')
-def get_time():
-
-    # Returning an api for showing in  reactjs
-    return jsonify(response_data)
-
-
-@app.route('/resultMagnel')
-def resultMagnel():
-    print("testando!!!", input())
-    # Returning an api for showing in  reactjs
-    return {
-        input()
-    }
-
-
-@app.route('/foo', methods=['POST'])
-def foo():
-    if request.method == 'POST':
-        # Get the data from the JSON body of the request
-        data = request.get_json()
-
-        # Access the username and email parameters sent from the frontend
-        username = data.get('username')
-        email = data.get('email')
-        teste = data.get('teste')
-        print(username)
-        print(email)
-        print(teste)
-
-        # Perform any necessary backend processing with the received data
-        response_data = {
-            'message': 'Data received successfully!',
-            'username': username,
-            'email': email,
-            'teste': teste,
-        }
-
-        # Return the response as JSON
-        return jsonify(response_data)
 
 
 resultado0, resultado1, resultado2, resultado3 = 0, 0, 0, 0
@@ -77,6 +42,69 @@ deltaperc, p_it1, sigma_pit1, psi, psi_1000 = 0, 0, 0, 0, 0
 elasticidadeaco, belasticidadeconc, ci, ti, armadura, secaobruta, inerciabruta, excentricidade = 0, 0, 0, 0, 0, 0, 0, 0,
 p_it0, sigma_pit0, a_c, t_1, mu_ar, abatimento, a_slcp, umidade, tipo_endurecimento, t_0, e_scp, e_ccpt1, sigma_cabo, f_ck0, temp, f_ck = 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0
 deltaperc, p_it1, sigma_pit1, psi, phi = 0, 0, 0, 0, 0
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Enable Cross-Origin Resource Sharing (CORS) to allow requests from the React app
+CORS(app)
+
+# Function to check for allowed file extensions
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    # Check if the post request has the file part
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in the request'}), 400
+
+    file = request.files['file']
+
+    # If the user does not select a file, the browser submits an
+    # empty file without a filename.
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and allowed_file(file.filename):
+        # Use secure_filename to prevent directory traversal attacks
+        filename = secure_filename(file.filename)
+
+        # Create the upload folder if it doesn't exist
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+
+        # Save the file
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+     texto="Elabore questões sobre este conteúdo: "
+for eachfile in glob.glob(filename):
+    prs = Presentation(eachfile)
+    print(eachfile)
+    print("----------------------")
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            if hasattr(shape, "text"):
+              #  print(shape.text)
+          
+                texto=texto+'\n'+shape.text
+                Ask_chatgpt = chat_with_gpt(texto)
+
+        return jsonify({'message': 'File successfully uploaded', 'filename': filename}), 200
+    else:
+        return jsonify({'error': 'File type not allowed'}), 400
+
+
+def chat_with_gpt(user_input):
+    # Replace your actual OpenAI API key
+    openai.api_key = "a chave é a mesma q esta no .env do front"
+    response = openai.Completion.create(
+        engine="gpt-3.5-turbo-instruct",  # Use the appropriate engine
+        prompt=user_input,
+    )
+# Extracting and returning the assistant's response
+    assistant_response = response['choices'][0]['text']
+    print("resposta:",  assistant_response)
+
+    return assistant_response
 
 
 @app.route('/magnel', methods=['POST', 'GET'])
