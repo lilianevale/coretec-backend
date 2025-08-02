@@ -90,9 +90,15 @@ def upload_file():
                 texto=texto+'\n'+shape.text
                 Ask_chatgpt = chat_with_gpt(texto)
 
-        return jsonify({'message': 'File successfully uploaded', 'filename': filename}), 200
-     else:
-        return jsonify({'error': 'File type not allowed'}), 400
+ elif request.method == 'GET':
+
+        response_data = { 
+            ' \\n questões' : Ask_chatgpt,
+
+        }
+    return jsonify(response_data)
+
+
 
 
 def chat_with_gpt(user_input):
