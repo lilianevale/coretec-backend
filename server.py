@@ -1,7 +1,10 @@
 # Filename - server.py
 
 # Import flask and datetime module for showing date and time
-import openpyxl 
+from werkzeug.utils import secure_filename
+from flask_cors import CORS
+import os
+import openpyxl
 import openai
 from flask import Flask, jsonify, render_template, request, session
 import datetime
@@ -12,10 +15,6 @@ import pandas as pd
 import matplotlib
 matplotlib.pyplot.switch_backend('Agg')
 
-
-import os
-from flask_cors import CORS
-from werkzeug.utils import secure_filename
 
 # Define the folder where uploads will be stored
 UPLOAD_FOLDER = 'uploads'
@@ -48,9 +47,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 CORS(app)
 
 # Function to check for allowed file extensions
+
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route('/upload', methods=['POST', 'GET'])
 def upload_file():
@@ -102,8 +104,6 @@ def upload_file():
 
 
 def chat_with_gpt(user_input):
-    # Replace your actual OpenAI API key
-    openai.api_key = "a chave é a mesma q esta no .env do front"
     response = openai.Completion.create(
         engine="gpt-3.5-turbo-instruct",  # Use the appropriate engine
         prompt=user_input,

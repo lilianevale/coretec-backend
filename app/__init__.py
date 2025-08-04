@@ -19,6 +19,8 @@ def create_app():
     app.config["JWT_SECRET_KEY"] = "Term228687535@"
     jwt = JWTManager(app)
     
+    app.config['UPLOAD_FOLDER'] = 'uploads'
+    
     # Configuração do e-mail
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # ou outro servidor
     app.config['MAIL_PORT'] = 587
@@ -38,6 +40,7 @@ def create_app():
     from .routes.tensao import tensao_bp
     from .routes.armadura import armadura_bp
     from .routes.fluencia import fluencia_bp
+    from .routes.gerador_questoes import gerador_questoes_bp
     from .routes.auth import auth_bp
 
     app.register_blueprint(magnel_bp)
@@ -47,6 +50,7 @@ def create_app():
     app.register_blueprint(tensao_bp)
     app.register_blueprint(armadura_bp)
     app.register_blueprint(fluencia_bp)
+    app.register_blueprint(gerador_questoes_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
 
     return app
