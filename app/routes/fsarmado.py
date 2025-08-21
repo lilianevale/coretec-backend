@@ -1,3 +1,13 @@
+from flask import Blueprint, request, jsonify
+from app.utils.calculos import perda_relax_armadura
+import pandas as pd
+
+fsarmado_bp = Blueprint('fsarmado', __name__)
+
+# Variáveis globais como no seu código original
+deltaperc = p_it1 = sigma_pit1 = psi = psi_1000 = 0
+response_data = {}
+
 @app.route('/fsarmado', methods=['POST', 'GET'])
 def handle_user_data():
     global response_data
