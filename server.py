@@ -253,7 +253,7 @@ def handle_user_data():
     elif request.method == 'GET':
 
         response_data = { 
-                    'x_ii': f'{x_ii_teste*1e2:.3e} cm',
+                    'x_ii':f'{x_ii*1e2:.3e} cm',
                     'i_ii':f'{i_ii:.3e} m\u2074',
                     'a_1': f'{a_1*1e2:.3e} cm',
                     'a_2':f'{a_2*1e4:.3e} cm²',
