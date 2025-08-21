@@ -5,6 +5,7 @@ import pandas as pd
 estadio1_bp = Blueprint('estadio1', __name__)
 
 # Variáveis globais (como no seu código original)
+h_f, b_f, b_w, a_st, a_sc, alpha_mod, d, dl=0,0,0,0,0,0,0,0
 a_ci, x_i, i_i, w_inf, w_sup=0,0,0,0,0
 response_data = {}
 
