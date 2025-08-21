@@ -8,7 +8,7 @@ fsarmado_bp = Blueprint('fsarmado', __name__)
 deltaperc = p_it1 = sigma_pit1 = psi = psi_1000 = 0
 response_data = {}
 
-@app.route('/fsarmado', methods=['POST', 'GET'])
+@fsarmado_bp.route('/fsarmado', methods=['POST', 'GET'])
 def handle_user_data():
     global response_data
     if request.method == 'POST':
