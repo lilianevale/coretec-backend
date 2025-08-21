@@ -6,6 +6,113 @@ import base64
 import os
 import uuid
 
+def prop_geometrica_estadio_ii(H_F, B_F, B_W, A_ST, A_SC, ALPHA_MOD, D, D_L, PRINT=False):
+    """
+    Esta função calcula as propriedades geométricas de uma peça de concreto armado no estádio II.
+
+    Entrada:
+    H_F        | Altura de mesa superior da seção Tê                     | m    | float
+    B_F        | Base de mesa superior da seção Tê                       | m    | float
+    B_W        | Base de alma da seção Tê                                | m    | float
+    A_ST       | Área de aço na seção tracionada                         | m²   | float
+    A_SC       | Área de aço na seção comprimida                         | m²   | float
+    ALPHA_MOD  | Relação entre os módulos de elasticidade aço-concreto   |      | float
+    D          | Altura útil da armadura tracionada                      | m    | float
+    D_L        | Altura útil da armadura comprimida                      | m    | float
+    PRINT      | Critério de impressão dos resultados para visualização  |      | string
+
+    Saída:
+    X_II       | Centro geometrico da viga no estádio 2                  | m    | float
+    I_II       | Inércia da viga no estádio 2                            | m^4  | float
+    """
+    
+    # Checagem do primeiro teste de linha neutra. Hipótese de B_W = B_F
+    A_1 = B_F / 2
+    H_FAUX = H_F * 0 
+    A_2 = H_FAUX * (B_F - B_W) + (ALPHA_MOD - 1) * A_SC + ALPHA_MOD * A_ST
+    A_3 = - D_L * (ALPHA_MOD - 1) * A_SC - D * ALPHA_MOD * A_ST - (H_FAUX ** 2 / 2) * (B_F - B_W)
+    X_IITESTE = (- A_2 + (A_2 ** 2 - 4 * A_1 * A_3) ** 0.50) / (2 * A_1)
+    
+    # Cálculo da linha neutra em função do teste de 1º chute
+    if X_IITESTE <= H_F:
+        # L.N. passando pela mesa
+        X_II = X_IITESTE
+        PASSA_ONDE = "mesa"
+    elif X_IITESTE > H_F:
+        # L.N. passando pela alma
+        A_1 = B_W / 2
+        A_2 = H_F * (B_F - B_W) + (ALPHA_MOD - 1) * A_SC + ALPHA_MOD * A_ST
+        A_3 = - D_L * (ALPHA_MOD - 1) * A_SC - D * ALPHA_MOD * A_ST - (H_F ** 2 / 2) * (B_F - B_W)
+        X_II = (- A_2 + (A_2 ** 2 - 4 * A_1 * A_3) ** 0.50) / (2 * A_1)
+        PASSA_ONDE = "alma"
+    
+    # Inércia estádio II
+    if X_II <= H_F:
+        # L.N. passando pela mesa
+        I_II = (B_F * X_II ** 3) / 3 + ALPHA_MOD * A_ST * (X_II - D) ** 2 + (ALPHA_MOD - 1) * A_SC * (X_II - D_L) ** 2
+    else:
+        # L.N. passando pela alma
+        I_II = ((B_F - B_W) * H_F ** 3) / 12 + (B_W * X_II ** 3) / 3 + (B_F - B_W) * (X_II - H_F * 0.50) ** 2 + ALPHA_MOD * A_ST * (X_II - D) ** 2 + (ALPHA_MOD - 1) * A_SC * (X_II - D_L) ** 2
+   
+    # Impressões
+    if PRINT == True:
+        print("\n")
+        print("PROP. ESTÁDIO II")
+        print("X_IITESTE: ", X_IITESTE)
+        print("X_II: ", X_II)
+        print("I_II: ", I_II)
+        print("\n")
+
+    return X_II, I_II, A_1, A_2, A_3, PASSA_ONDE, X_IITESTE
+
+
+def prop_geometrica_estadio_i(H, H_F, B_F, B_W, A_ST, ALPHA_MOD, D, PRINT=False):
+    """
+    Esta função calcula as propriedades geométricas de uma peça de concreto armado no estádio I.
+
+    Entrada:
+    H          | Altura total da seção Tê                                  | m    | float
+    H_F        | Altura de mesa superior da seção Tê                       | m    | float
+    B_F        | Base de mesa superior da seção Tê                         | m    | float
+    B_W        | Base de alma da seção Tê                                  | m    | float
+    A_ST       | Area de aço na seção tracionada                           | m²   | float
+    ALPHA_MOD  | Relação entre os módulos de elasticidade aço-concreto     |      | float
+    D          | Altura útil da armadura tracionada                        | m    | float
+    PRINT      | Critério de impressão dos resultados para visualização    |      | string
+
+    Saída:
+    A_CI       | Área de concreto homogeneizada no estádio I               | m²   | float
+    X_I        | Centro geometrico da seção no estádio I bordo comprimido  | m    | float
+    I_I        | Inércia homogeneizada da seção no estádio I               | m^4  | float
+    W_INF      | Módulo resistente da seção bordo inferior                 | m³   | float
+    W_SUP      | Módulo resistente da seção bordo superior                 | m³   | float    
+    """
+    
+    # Área, Linha Neutra e Inércia
+    A_CI = H_F * (B_F - B_W) + B_W * H + A_ST * (ALPHA_MOD - 1)
+    PARCELA_1 = (B_F - B_W) * ((H_F ** 2) / 2)
+    PARCELA_2 = 0.50 * B_W * H ** 2
+    PARCELA_3 = A_ST * (ALPHA_MOD - 1) * D
+    X_I = (PARCELA_1 + PARCELA_2 + PARCELA_3) / A_CI
+    I_I = ((B_F - B_W) * H_F ** 3) / 12 + (B_W * H ** 3) / 12 + H_F * (B_F - B_W) * (X_I - H_F * 0.50) ** 2 + B_W * H * (X_I - 0.50 * H) ** 2 + A_ST * (ALPHA_MOD - 1) * (X_I - D) ** 2
+    W_SUP = I_I / X_I
+    W_INF = I_I / (H - X_I)
+
+    # Impressões
+    if PRINT == True:
+        print("\n")
+        print("PROP. GEOMETRICAS ESTÁDIO I")
+        print("A_CI:  ", A_CI)
+        print("X_I:   ", X_I)
+        print("I_I:   ", I_I)
+        print("W_INF: ", X_I)
+        print("W_SUP: ", I_I)
+        print("\n")
+    
+    return A_CI, X_I, I_I, W_INF, W_SUP
+
+
+
 def area_aco_flexao_simples(b_w, h, d, f_ck, f_ywk, gamma_c, gamma_s, m_sd, v_sd, cob, phi_est, d_max, impressao=False):
     """
     Esta função determina a área de aço necessária para combater os esforços de flexão na peça de concreto armado de acordo com a NBR 6118.
