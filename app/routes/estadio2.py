@@ -1,4 +1,16 @@
-@app.route('/estadio2', methods=['POST', 'GET'])
+from flask import Blueprint, request, jsonify
+from app.utils.calculos import perda_relax_armadura
+import pandas as pd
+
+estadio2_bp = Blueprint('estadio2', __name__)
+
+# Variáveis globais como no seu código original
+x_ii, i_ii, a_1, a_2, a_3, passa_onde, x_ii_teste =0,0,0,0,0,0,0
+response_data = {}
+
+
+
+@estadio2_bp.route('/estadio2', methods=['POST', 'GET'])
 def handle_user_data():
     global response_data
     if request.method == 'POST':
