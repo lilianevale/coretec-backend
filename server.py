@@ -27,7 +27,11 @@ app = Flask(__name__)
 response_data = {}
 # Route for seeing a data
 
-
+step, b_w, h, d, f_ck, f_ywkaux, f_ywk,  gamma_c,  gamma_s, m_sd, v_sd, cob,phi_est, d_max=0,0,0,0,0,"",0,0,0,0,0,0,0,0
+x_iii, z_iii, a_slmin, a_sl, v_rd2, v_c0, a_swmin, a_sw90, a_h, a_v, n_bar_cam, fig =0,0,0,0,0,0,0,0,0,0,0,"teste.png"
+h_f, b_f, b_w, a_st, a_sc, alpha_mod, d, dl=0,0,0,0,0,0,0,0
+a_ci, x_i, i_i, w_inf, w_sup=0,0,0,0,0
+x_ii, i_ii, a_1, a_2, a_3, passa_onde, x_ii_teste =0,0,0,0,0,0,0
 resultado0, resultado1, resultado2, resultado3 = 0, 0, 0, 0
 deltaperc, p_it1, sigma_pit1 = 0, 0, 0
 sigma_t, sigma_b, fig = 0, 0, "teste.png"
@@ -114,7 +118,161 @@ def chat_with_gpt(user_input):
 
     return assistant_response
 
+@app.route('/fsarmado', methods=['POST', 'GET'])
+def handle_user_data():
+    global response_data
+    if request.method == 'POST':
+        # Get the data from the JSON body of the request
+        data = request.get_json()
+        global step, b_w, h, d, f_ck, f_ywkaux, f_ywk,  gamma_c,  gamma_s, m_sd, v_sd, cob, phi_est, d_max
 
+        # Access the username and email parameters sent from the frontend
+        global x_iii, z_iii, a_slmin, a_sl, v_rd2, v_c0, a_swmin, a_sw90, a_h, a_v, n_bar_cam, fig
+
+        step= 1e-8
+        b_w= float(data.get('lviga1'))
+        h= float(data.get('hviga1'))
+        d= float(data.get('hutilsecao1'))
+        f_ck= float(data.get('resistconc1'))
+        f_ywkaux= float(data.get('resistaco1'))
+        gamma_c= float(data.get('cofconc1'))
+        gamma_s=float(data.get('cofaco1'))
+        m_sd=float(data.get('fletor1'))
+        v_sd=float(data.get('corte'))
+        cob=float(data.get('tamanho1'))
+        phi_est=float(data.get('estribo1'))
+        d_max=float(data.get('fletor1'))
+        phi_est=phi_est/1000
+        if f_ywkaux == 'CA-25':
+            f_ywk = 250e3
+        elif f_ywkaux == 'CA-50':
+            f_ywk = 500e3
+        else:
+            f_ywk = 600e3
+
+        x_iii, z_iii, a_slmin, a_sl, v_rd2, v_c0, a_swmin, a_sw90, a_h, a_v, n_bar_cam, fig = area_aco_flexao_simples(
+                b_w/100, h/100, d/100, f_ck*1000, f_ywk, gamma_c, gamma_s, m_sd, v_sd, cob/100, phi_est, d_max/1000
+            )   
+        
+
+        # Perform any necessary backend processing with the received data
+    elif request.method == 'GET':
+
+        response_data = { 
+            'x_iii':f"{x_iii*1e2:.3e}",
+            'z_iii' : f"{z_iii*1e2:.3e}",
+            'a_slmin' : f"{a_slmin*1e4:.3e}",
+            'a_sl' : f"{a_sl*1e4:.3e}",
+            'v_rd2': f"{v_rd2:.3e}",
+            'v_c0': f"{v_c0:.3e}",
+            'a_swmin': f"{a_swmin*1e4:.3e}",
+            'a_sw90': f"{a_sw90*1e4:.3e}",
+            'n_bar_cam': n_bar_cam,
+            'fig': fig,
+            
+
+        }
+        print("response_data ", response_data )
+
+   # return {
+    #       'message': 'result',
+     #       'resultado0' : resultado0,
+      #      'resultado1' : resultado1,
+       #     'resultado2' : resultado2,
+        #    'resultado3' : resultado3
+
+   # } 
+    return jsonify(response_data)
+
+app.route('/estadio1', methods=['POST', 'GET'])
+def handle_user_data():
+    global response_data
+    if request.method == 'POST':
+        # Get the data from the JSON body of the request
+        data = request.get_json()
+        global h, h_f, b_f, b_w, a_st, alpha_mod, d
+        # Access the username and email parameters sent from the frontend
+        global a_ci, x_i, i_i, w_inf, w_sup
+        step= 1e-8
+        h= float(data.get('htotal1'))
+        h_f= float(data.get('hmesa1'))
+        b_f= float(data.get('lmesa1'))
+        b_w= float(data.get('alma1'))
+        a_st= float(data.get('tracao1'))
+        alpha_mod=float(data.get('modulos1'))
+        d=float(data.get('fletor1'))
+       
+        a_ci, x_i, i_i, w_inf, w_sup = prop_geometrica_estadio_i(h, h_f, b_f, b_w, a_st/1e4, alpha_mod, d)
+
+        # Perform any necessary backend processing with the received data
+    elif request.method == 'GET':
+
+        response_data = { 
+                    'a_ci':f"{a_ci*1e4:.3e}",
+                    'x_i':f"{x_i * 1e2:.3e}",
+                    'i_i': f"{i_i:.3e}",
+                    'w_inf':f"{w_inf*1e6:.3e}",
+                    'w_sup':f"{w_sup*1e6:.3e}",
+        }
+        print("response_data ", response_data )
+
+   # return {
+    #       'message': 'result',
+     #       'resultado0' : resultado0,
+      #      'resultado1' : resultado1,
+       #     'resultado2' : resultado2,
+        #    'resultado3' : resultado3
+
+   # } 
+    return jsonify(response_data)
+
+
+@app.route('/estadio2', methods=['POST', 'GET'])
+def handle_user_data():
+    global response_data
+    if request.method == 'POST':
+        # Get the data from the JSON body of the request
+        data = request.get_json()
+        global h, h_f, b_f, b_w, a_st, a_sc, alpha_mod, d, dl
+        # Access the username and email parameters sent from the frontend
+        global x_ii, i_ii, a_1, a_2, a_3, passa_onde, x_ii_teste 
+        step= 1e-8
+        h_f= float(data.get('hmesa1'))
+        b_f= float(data.get('lmesa1'))
+        b_w= float(data.get('alma1'))
+        a_st= float(data.get('tracao1'))
+        a_sc=float(data.get('comprimida1'))
+        alpha_mod=float(data.get('modulos1'))
+        d=float(data.get('fletor1'))
+        dl=float(data.get('hcompr1'))
+       
+        x_ii, i_ii, a_1, a_2, a_3, passa_onde, x_ii_teste = prop_geometrica_estadio_ii(h_f, b_f, b_w, a_st/1e4, a_sc/1e4, alpha_mod, d, d_l)
+        # Perform any necessary backend processing with the received data
+    elif request.method == 'GET':
+
+        response_data = { 
+                    'x_ii': f'{x_ii_teste*1e2:.3e} cm',
+                    'i_ii':f'{i_ii:.3e} m\u2074',
+                    'a_1': f'{a_1*1e2:.3e} cm',
+                    'a_2':f'{a_2*1e4:.3e} cm²',
+                    'a_3':f'{a_3*1e6:.3e} cm³',
+                    'passa_onde':passa_onde,
+                    'x_ii_teste':f'{x_ii_teste*1e2:.3e} cm',
+        }
+        print("response_data ", response_data )
+
+   # return {
+    #       'message': 'result',
+     #       'resultado0' : resultado0,
+      #      'resultado1' : resultado1,
+       #     'resultado2' : resultado2,
+        #    'resultado3' : resultado3
+
+   # } 
+    return jsonify(response_data)
+    
+
+ 
 @app.route('/magnel', methods=['POST', 'GET'])
 def handle_user_data():
     global response_data
