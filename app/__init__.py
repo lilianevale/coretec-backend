@@ -46,7 +46,7 @@ def create_app():
     from .routes.gerador_questoes import gerador_questoes_bp
     from .routes.auth import auth_bp
 
-    app.register_blueprint(fsarmadura_bp)
+    app.register_blueprint(fsarmado_bp)
     app.register_blueprint(estadio1_bp)
     app.register_blueprint(estadio2_bp)
     app.register_blueprint(magnel_bp)
