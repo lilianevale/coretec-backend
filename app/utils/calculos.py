@@ -6,6 +6,289 @@ import base64
 import os
 import uuid
 
+def area_aco_flexao_simples(b_w, h, d, f_ck, f_ywk, gamma_c, gamma_s, m_sd, v_sd, cob, phi_est, d_max, impressao=False):
+    """
+    Esta função determina a área de aço necessária para combater os esforços de flexão na peça de concreto armado de acordo com a NBR 6118.
+
+    Args:
+        b_w (float): Largura da viga (m)
+        h (float): Altura da viga (m)
+        d (float): Altura útil da seção (m)
+        f_ck (float): Resistência característica à compressão (kPa)
+        f_ywk (float): Resistência característica do aço (kPa)
+        gamma_c (float): Coeficiente de minoração da resistência do concreto
+        gamma_s (float): Coeficiente de minoração da resistência do aço
+        m_sd (float): Momento fletor de cálculo (kNm)
+        v_sd (float): Esforço cortante de cálculo (kN)
+        cob (float): Cobrimento da armadura (m)
+        phi_est (float): Diâmetro do estribo (m)
+        d_max (float): Diâmetro máximo do agregado graudo (m)
+        impressao (bool): Critério de impressão dos resultados para visualização
+    
+    Returns:
+        x_iii (float): Linha neutra da peça (m)
+        z_iii (float): Braço de alavanca (m)
+        a_slmin (float): Área de aço mínima (m2)
+        a_sl (float): Área de aço longitudinal (m2)
+        v_rd2 (float): Esforço cortante resistente (kN)
+        v_c0 (float): Esforço cortante resistente do concreto (kN)
+        a_swmin (float): Área de aço transversal mínima (m2)
+        a_sw90 (float): Área de aço transversal (m2)
+        a_h (list): Espaçamento horizontal entre as barras (m)
+        a_v (list): Espaçamento vertical entre as barras (m)
+        n_bar_cam (list): Quantidade de barras por camada
+        fig (matplotlib.figure): Figura com os desenhos das barras de aço na seção transversal da viga
+    """
+
+    # Verificação constates de projeto
+    f_ck /= 1E3
+    if f_ck >  50:
+        lambda_c = 0.80 - ((f_ck - 50) / 400)
+        alpha_c = (1.00 - ((f_ck - 50) / 200)) * 0.85
+        beta = 0.35
+        f_ctm = 2.12 * np.log(1 + 0.10 * (f_ck + 8.00))
+    else:
+        lambda_c = 0.80
+        alpha_c = 0.85
+        beta = 0.45
+        f_ctm = 0.30 * f_ck**(2 / 3)
+    alpha_v2 = 1 - f_ck / 250
+    f_ctm *= 1E3
+    f_ctksup = 1.30 * f_ctm
+    #f_ctkinf = 0.7 * f_ctm
+    f_ck *= 1E3
+    f_cd = f_ck / gamma_c
+    f_yd = f_ywk / gamma_s
+    # Armadura flexão mínima
+    inercia = b_w * h**3 / 12
+    w_0 = inercia / (h / 2)
+    m_sdmin = 0.80 * w_0 * f_ctksup
+    zeta_min = m_sdmin / (b_w * alpha_c * f_cd)
+    aux_min = d**2 - 2 * zeta_min
+    numerador_min = d - np.sqrt(aux_min)
+    denominador_min = lambda_c
+    x_iii_min = numerador_min / denominador_min
+    z_iii_min = d - 0.50 * lambda_c * x_iii_min
+    a_slmin = m_sdmin / (z_iii_min * f_yd)
+
+    # Cálculo da área de aço armadura simples/dupla e esforços resistentes
+    m_rdlim = b_w * d**2 * lambda_c * beta * alpha_c * f_cd * (1 - 0.50 * lambda_c * beta)
+    v_rd2 = 0.27 * alpha_v2 * f_cd * b_w * d
+    if m_sd > m_rdlim:
+        if impressao is True:
+            print("O momento fletor de cálculo é maior que o momento fletor mínimo. Portanto deve-se usar armadura dupla")  
+    else:
+        zeta = m_sd / (b_w * alpha_c * f_cd)
+        aux = d**2 - 2 * zeta
+        numerador = d - np.sqrt(aux)
+        denominador = lambda_c
+        x_iii = numerador / denominador
+        z_iii = d - 0.50 * lambda_c * x_iii
+        f_yd = f_ywk / gamma_s
+        a_slaux = m_sd / (z_iii * f_yd)
+        a_sl = max(a_slmin, a_slaux)
+
+    # Cálcuo da área de aço transversal
+    f_ctd = (0.7 * f_ctm) / gamma_c
+    v_c0 = 0.6 * f_ctd * b_w * d
+    v_c = v_c0
+    inclinacao_est = np.pi / 2
+    pho_sw = 0.20 * (f_ctm / f_ywk)
+    a_swmin = pho_sw * b_w * np.sin(inclinacao_est)
+    if v_sd <= v_c:
+        a_swaux = a_swmin
+        v_sw = 0
+    else:
+        v_sw = v_sd - v_c
+        f_ywdaux = f_ywk / gamma_s
+        f_ywdmax = 500E3 / gamma_s 
+        f_ywd = min(f_ywdaux, f_ywdmax)
+        a_swaux = v_sw / (0.90 * d * f_ywd * (np.sin(inclinacao_est) + np.cos(inclinacao_est)))
+    a_sw90 = max(a_swaux, a_swmin)
+
+    # Espaçamento entre as barras
+    phi_l = [6.3, 8.0, 10, 12.5, 16, 20, 25, 32]
+    phi_l_aux = [x / 1000 for x in phi_l]
+    a_h = []
+    a_v = []
+    for i in phi_l_aux:
+        a_h1 = 2 / 100
+        a_h2 = 1.04 * i 
+        a_h3 = 1.20 * d_max
+        a_v3 = 0.50 * d_max
+        a_h.append(max(a_h1, a_h2, a_h3))
+        a_v.append(max(a_h1, a_h2, a_v3))
+
+    # Geração da figura da seção
+    desenhos, n_bar_cam = quantidade_barras_por_camada(phi_est, cob, b_w, a_h, a_sl, impressao)
+    fig = desenho_armadura_secao(b_w, h, phi_est, cob, a_v, phi_l, desenhos)
+    
+    # Impressões
+    if impressao is True:
+        print("\n")
+        print("Determinação da quantidade de área de aço longitudinal")
+        print(f"m_Rdlim={m_rdlim:.3e} kNm (limite armadura simples)", )
+        print(f"x_iii={x_iii:.3e} m", )
+        print(f"z_iii={z_iii:.3e} m")
+        print(f"a_slmin={a_slmin:.3e} m2")
+        print(f"a_sl={a_sl:.3e} m2")
+        print("Determinação da quantidade de área de aço transversal")
+        print(f"v_Rd2={v_rd2:.3e} kN")
+        print(f"v_c0={v_c0:.3e} kN")
+        print(f"a_swmin={a_swmin:.3e} m2/m")
+        print(f"a_sw90={a_sw90:.3e} m2/m")
+
+    return x_iii, z_iii, a_slmin, a_sl, v_rd2, v_c0, a_swmin, a_sw90, a_h, a_v, n_bar_cam, fig
+
+def desenho_armadura_secao(b_w, h, phi_est, cob, a_v, barras_long, desenhos):
+    """Desenho das barras de aço na seção transversal da viga de concreto armado.
+    
+    Args:
+        b_w (float): Largura da viga (m)
+        h (float): Altura da viga (m)
+        phi_est (float): Diâmetro do estribo (m)
+        cob (float): Cobrimento da armadura (m)
+        a_v (list): Espaçamento vertical entre as barras (m)
+        barras_long (list): Lista com as bitolas disponíveis (mm)
+        desenhos (list): Lista com as quantidades de barras para cada bitola disponível
+
+    Returns:
+        fig (matplotlib.figure): Figura com os desenhos das barras de aço na seção transversal da viga
+    """
+    
+    # Criando os desenhos da viga e estribo
+    viga_x = [0, b_w, b_w, 0, 0]
+    viga_y = [0, 0, h, h,0] 
+    est_ext_x = [cob, b_w - cob, b_w - cob, cob, cob]
+    est_ext_y = [cob, cob, h - cob, h - cob, cob]
+    est_int_x = [cob + phi_est, b_w - cob - phi_est, b_w - cob - phi_est, cob + phi_est, cob + phi_est]
+    est_int_y = [cob + phi_est, cob + phi_est, h - cob - phi_est, h - cob - phi_est, cob + phi_est]
+
+    # Criando a figura de 8 partes
+    fig, axs = plt.subplots(4, 2, figsize=(5, 10), dpi=300)
+
+    # Iterar sobre os eixos e bitolas disponíveis
+    cont = 0
+    for ax, titulo in zip(axs.ravel(), barras_long):
+        ax.set_title(f'detalhe {titulo} mm')
+        ax.plot(viga_x, viga_y, color='gray', linewidth=1)
+        ax.plot(est_ext_x, est_ext_y, color='blue', linewidth=0.5)
+        ax.plot(est_int_x, est_int_y, color='blue', linewidth=0.5)
+        # Determinando o valor de espaçamento e posição das barras para as bitolas disponíveis
+        phi_l = titulo / 1000
+        raio = phi_l / 2
+        desenho_bars = desenhos[cont]
+        y_coord = []
+        y_aux = cob + phi_est + phi_l/2
+        for m in range(len(desenho_bars)):
+            y_coord_aux = []
+            for n in range(int(desenho_bars[m])):
+                y_coord_aux.append(y_aux)
+            y_coord.append(y_coord_aux)
+            y_aux += phi_l + a_v[cont]
+        cont += 1
+        x_coord = []
+        for k in range(len(desenho_bars)):
+            x_coord_aux = []
+            n_esp = desenho_bars[k] - 1
+            b_disp = b_w - 2 * (cob + phi_est + phi_l/2)
+            for l in range(int(desenho_bars[k])):
+                if desenho_bars[k] == 1:
+                  x_coord_aux.append(cob + phi_est + phi_l/2)
+                  break
+                elif desenho_bars[k] == 2:
+                  x_coord_aux.append(cob + phi_est + phi_l/2)
+                  x_coord_aux.append(b_w - cob - phi_est - phi_l/2)
+                  break
+                else:
+                  dist = b_disp / n_esp
+                  if l == 0:
+                    aux = cob + phi_est + phi_l/2
+                  elif l == desenho_bars[k] - 1:
+                    aux = b_w - cob - phi_est - phi_l/2
+                  else:
+                    aux = x_coord_aux[l-1] + dist
+                  x_coord_aux.append(aux)
+            x_coord.append(x_coord_aux)
+        for i in range(len(desenho_bars)):
+          for j in range(int(desenho_bars[i])):
+              x = x_coord[i][j] 
+              y = y_coord[i][j] 
+              circulo = patches.Circle((x, y), raio, edgecolor='red', facecolor='none', linewidth=0.5)
+              ax.add_patch(circulo)
+        ax.set_xlim(-0.05, b_w+0.05)
+        ax.set_ylim(-0.05, h+0.05)
+        ax.set_aspect('equal')
+        ax.axis('off')
+        plt.tight_layout() 
+               
+    return fig
+    
+def quantidade_barras_por_camada(phi_est, cob, b_w, a_h, a_sl, impressao=False):
+    """
+    Quantidade de barras por camadas.
+
+    Args:
+        phi_est (float): Diâmetro do estribo (m)
+        cob (float): Cobrimento da armadura (m)
+        b_w (float): Largura da viga (m)
+        a_h (list): Espaçamento horizontal entre as barras (m)
+        a_sl (float): Área de aço longitudinal (m2)
+
+    Returns:
+        desenhos (list): Lista com as quantidades de barras por camada para cada bitola disponível
+        n_bar_por_camada (list): Lista com as quantidades de barras por camada para cada bitola disponível
+    """
+
+    # Largura disponível
+    phi_l = [6.3, 8.0, 10, 12.5, 16, 20, 25, 32]
+    phi_l = [x / 1000 for x in phi_l]
+    n_bar_por_camada = []
+    asl_phi = []
+    n_bar_tot = []
+    phi_cor = []
+    b_disp = b_w - 2 * (cob + phi_est)
+
+    # Cálculo da quantidade de barras por camada
+    for chave, valor in enumerate(phi_l):
+        asl_phi.append(np.pi * ((valor * 1.04) ** 2) / 4)
+        phi_cor.append(valor + (4/100 * valor))
+        n_bar_por_camada.append(round((b_disp + a_h[chave]) / (valor + a_h[chave])))
+
+    # Cálculo da quantidade total de barras
+    for chave, valor in enumerate(asl_phi):
+        n_bar_tot.append(a_sl/valor)
+    n_bar_tot = list(map(np.ceil, n_bar_tot))
+
+    # Cálculo da quantidade de barras por camada
+    n_cam = [x / y for x, y in zip(n_bar_tot, n_bar_por_camada)]
+    n_cam = list(map(np.ceil, n_cam))
+
+    # Barras por camada
+    desenhos = []
+    for chave, valor in enumerate(n_cam):
+        desenho_phi = []
+        n_bar_tot_aux = n_bar_tot[chave]
+        for i in range(int(valor)):
+            if i == valor - 1:
+                desenho_phi.append(n_bar_tot_aux)
+            else:
+                desenho_phi.append(n_bar_por_camada[chave])
+                n_bar_tot_aux -= n_bar_por_camada[chave]
+        desenhos.append(desenho_phi)
+
+    # Impressões
+    if impressao is True:
+        print("\n")
+        print("Detalhamento das camadas de armadura")
+        for chave, valor in enumerate(phi_l):
+            print(f"Bitola: {valor * 1000} mm")
+            print(f"Quantidade de camadas: {n_cam[chave]}")
+            print(f"Quantidade total de barras: {n_bar_tot[chave]}")
+            print(f"Quantidade total de barras por camada: {n_bar_por_camada[chave]}")
+            print(f"Quantidade de barras por camada: {desenhos[chave]}")
+
+    return desenhos, n_bar_por_camada
 
 def diagrama_magnel(a_c, y_t, y_b, i_c, sigma_max, sigma_min, m_sd_inicial):
     w_t = i_c / y_t
