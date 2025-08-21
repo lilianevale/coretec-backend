@@ -38,7 +38,7 @@ def create_app():
     from .routes.ancoragem import ancoragem_bp
     from .routes.concreto import concreto_bp
     from .routes.tensao import tensao_bp
-    from .routes.fsarmadura import fsarmadura_bp
+    from .routes.fsarmado import fsarmado_bp
     from .routes.estadio1 import estadio1_bp
     from .routes.estadio2 import estadio2_bp
     from .routes.armadura import armadura_bp
