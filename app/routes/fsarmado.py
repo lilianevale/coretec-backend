@@ -5,6 +5,7 @@ import pandas as pd
 fsarmado_bp = Blueprint('fsarmado', __name__)
 
 # Variáveis globais como no seu código original
+step, b_w, h, d, f_ck, f_ywkaux, f_ywk,  gamma_c,  gamma_s, m_sd, v_sd, cob,phi_est, d_max=0,0,0,0,0,"",0,0,0,0,0,0,0,0
 x_iii, z_iii, a_slmin, a_sl, v_rd2, v_c0, a_swmin, a_sw90, a_h, a_v, n_bar_cam, fig =0,0,0,0,0,0,0,0,0,0,0,"teste.png"
 response_data = {}
 
