@@ -1,11 +1,11 @@
 from flask import Blueprint, request, jsonify
-from app.utils.calculos import perda_relax_armadura
+from app.utils.calculos import area_aco_flexao_simples
 import pandas as pd
 
 fsarmado_bp = Blueprint('fsarmado', __name__)
 
 # Variáveis globais como no seu código original
-deltaperc = p_it1 = sigma_pit1 = psi = psi_1000 = 0
+x_iii, z_iii, a_slmin, a_sl, v_rd2, v_c0, a_swmin, a_sw90, a_h, a_v, n_bar_cam, fig =0,0,0,0,0,0,0,0,0,0,0,"teste.png"
 response_data = {}
 
 @fsarmado_bp.route('/fsarmado', methods=['POST', 'GET'])
