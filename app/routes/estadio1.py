@@ -1,5 +1,14 @@
+from flask import Blueprint, request, jsonify
+from app.utils.calculos import perda_deformacao_imediata_concreto_pre_tracao
+import pandas as pd
 
-@app.route('/estadio1', methods=['POST', 'GET'])
+estadio1_bp = Blueprint('estadio1', __name__)
+
+# Variáveis globais (como no seu código original)
+a_ci, x_i, i_i, w_inf, w_sup=0,0,0,0,0
+response_data = {}
+
+@estadio1_bp.route('/estadio1', methods=['POST', 'GET'])
 def handle_user_data():
     global response_data
     if request.method == 'POST':
