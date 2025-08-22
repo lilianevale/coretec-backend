@@ -47,7 +47,13 @@ def handle_user_data():
             h, h_f, b_f, b_w, a_st/1e4, alpha_mod, d
         )
 
-        response_data = {"message": "Dados processados com sucesso"}
+        response_data = { 
+            'a_ci' : f"{a_ci*1e4:.3e}",
+            'x_i'  : f"{x_i*1e2:.3e}",
+            'i_i'  : f"{i_i:.3e}",
+            'w_inf': f"{w_inf*1e6:.3e}",
+            'w_sup': f"{w_sup*1e6:.3e}",
+        }
 
     elif request.method == 'GET':
         response_data = { 
