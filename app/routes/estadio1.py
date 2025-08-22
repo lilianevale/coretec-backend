@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.utils.calculos import perda_deformacao_imediata_concreto_pre_tracao
+from app.utils.calculos import prop_geometrica_estadio_i
 import pandas as pd
 
 estadio1_bp = Blueprint('estadio1', __name__)
