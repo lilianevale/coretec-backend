@@ -32,7 +32,7 @@ def handle_user_data():
             b_w     = float(data.get('alma1'))
             a_st    = float(data.get('tracao1'))
             alpha_mod = float(data.get('modulos1'))
-            d       = float(data.get('fletor1'))
+            d = float(data.get('fletor1') or data.get('htracao1'))
         except ValueError as e:
             return jsonify({"error": f"Valor inválido: {str(e)}"}), 400
 
