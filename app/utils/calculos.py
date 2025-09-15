@@ -6,6 +6,49 @@ import base64
 import os
 import uuid
 
+def plot_data(data):
+    """
+    Plota um gráfico com quadrados azuis em torno dos pontos e anotações a partir dos dados fornecidos.
+    Retorna a figura gerada.
+
+    Parâmetros:
+    data (dict): Um dicionário com chaves 'label', 'x', 'y', 'L x', e 'L y'.
+                 'label' deve ser uma lista de rótulos, 'x' e 'y' devem ser listas de coordenadas.
+                 'L x' e 'L y' definem as dimensões dos quadrados ao redor dos pontos.
+                 
+    Retorna:
+    plt.Figure: A figura gerada.
+    """
+    labels = data['label']
+    x = data['x']
+    y = data['y']
+    L_x = data['L x']
+    L_y = data['L y']
+
+    # Criando a figura e os eixos
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    # Desenhando os quadrados e pontos
+    for i in range(len(x)):
+        # Adiciona um quadrado azul ao redor do ponto
+        square = patches.Rectangle((x[i] - L_x[i] / 2, y[i] - L_y[i] / 2),
+                                   L_x[i], L_y[i], linewidth=1, edgecolor='blue', facecolor='none')
+        ax.add_patch(square)
+
+        # Adiciona o ponto
+        ax.scatter(x[i], y[i], color='red', marker='+', s=100)
+
+        # Adiciona a anotação
+        ax.annotate(labels[i], (x[i], y[i]), textcoords="offset points", xytext=(0, 10), ha='center')
+
+    # Configurando o gráfico
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_title('Posicionamento das sapatas')
+    ax.grid(True)
+
+    # Retorna a figura
+    return fig
 
 def run_python_script():
     # Usando sys.executable para garantir que o mesmo Python do ambiente Streamlit seja usado
