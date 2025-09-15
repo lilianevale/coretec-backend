@@ -1,6 +1,13 @@
 from flask import Blueprint, request, jsonify
 from app.utils.calculos import perda_retracao_concreto
 import pandas as pd
+import numpy as np
+import subprocess
+import sys
+
+from itertools import combinations
+from app.utils.calculos import carregar_dados, estaca_info, capacidade_carga, download_excel, plot_data, save_dxf
+from utilitarios import vazio
 
 sapatas = Blueprint('sapatas', __name__)
 
@@ -12,6 +19,13 @@ response_data = {}
 @sapatas_bp.route('/sapatas', methods=['POST', 'GET'])
 def handle_sapatas():
     global deltaperc, p_it1, sigma_pit1, eps_cs, response_data
+
+      # Carregamento do arquivo SPT
+        spt_file = st.file_uploader("Selecione o arquivo com a lista de SPT e suas coordenadas", type=["csv", "xlsx"])
+        if spt_file is not None:
+            df_spt = pd.read_excel(spt_file, engine='openpyxl')
+            df_spt.columns = df_spt.columns.str.strip()
+
 
     if request.method == 'POST':
         data = request.get_json()
