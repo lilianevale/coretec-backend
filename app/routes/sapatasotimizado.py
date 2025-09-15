@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 from itertools import combinations
-from app.utils.calculos import carregar_dados, estaca_info, capacidade_carga, download_excel, plot_data, save_dxf, vazio
+from app.utils.calculos import carregar_dados, estaca_info, capacidade_carga, download_excel, plot_data, save_dxf, vazio, run_python_script
 
 sapatasotimizado = Blueprint('sapatasotimizado', __name__)
 
@@ -117,7 +117,7 @@ def handle_sapatasotimizado():
             else:
                 st.error("Não foi possível encontrar a coluna 'Elem' em ambos os arquivos.")
 
-
+            run_python_script()
    
        
         return jsonify({
