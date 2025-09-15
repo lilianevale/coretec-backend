@@ -6,6 +6,19 @@ import base64
 import os
 import uuid
 
+def download_excel(df, nome_df):
+    if df is not None:
+        excel_file_name = nome_df.split(".")[0] + "_copia.xlsx"
+
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            with pd.ExcelWriter(tmp.name, engine='xlsxwriter') as writer:
+                df.to_excel(writer, index=False)
+
+            tmp.flush()
+
+            with open(tmp.name, 'rb') as f:
+                excel_file_content = f.read()
+                
 def plot_data(data):
     """
     Plota um gráfico com quadrados azuis em torno dos pontos e anotações a partir dos dados fornecidos.
