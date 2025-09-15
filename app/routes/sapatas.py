@@ -16,11 +16,11 @@ response_data = {}
 
 @sapatas_bp.route('/sapatas', methods=['POST', 'GET'])
 def handle_sapatas():
-      global  response_data, fig
+  global  response_data, fig
   if request.method == 'POST':
         data = request.get_json()
       # Carregamento do arquivo SPT
-     s  pt_file = request.files.get('arq1')
+        spt_file = request.files.get('arq1')
 
         if spt_file is not None:
             df_spt = pd.read_excel(spt_file, engine='openpyxl')
@@ -121,18 +121,17 @@ def handle_sapatas():
    
        
         return jsonify({
-            'deltaperc':  f'{deltaperc:.2f} %',
-            'p_it1':  f'{p_it1:.3e} kN',
-            'sigma_pit1': f'{sigma_pit1/1000:.3e} MPa',
-            'eps_cs': f'{eps_cs:.3e}'
+            'table1': st.table(df_final),
+            'table2':st.table(data_valid_combinations),
+            'fig':  fig,
+            
         })
 
     elif request.method == 'GET':
         response_data = {
-            'deltaperc':  f'{deltaperc:.2f} %',
-            'p_it1':  f'{p_it1:.3e} kN',
-            'sigma_pit1': f'{sigma_pit1/1000:.3e} MPa',
-            'eps_cs': f'{eps_cs:.3e}'
+           'fig':  fig,
+           'table1': st.table(df_final),
+           'table2':st.table(data_valid_combinations),
         }
 
         return jsonify(response_data)
