@@ -10,11 +10,13 @@ from app.utils.calculos import carregar_dados, estaca_info, capacidade_carga, do
 sapatas = Blueprint('sapatas', __name__)
 
 # Variáveis globais (como no original)
+fig
 response_data = {}
 
 
 @sapatas_bp.route('/sapatas', methods=['POST', 'GET'])
 def handle_sapatas():
+  
   if request.method == 'POST':
         data = request.get_json()
       # Carregamento do arquivo SPT
