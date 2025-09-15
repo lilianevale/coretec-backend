@@ -9,8 +9,8 @@ deltaperc = p_it1 = sigma_pit1 = eps_cs = 0
 response_data = {}
 
 
-@concreto_bp.route('/sapatas', methods=['POST', 'GET'])
-def handle_concreto():
+@sapatas_bp.route('/sapatas', methods=['POST', 'GET'])
+def handle_sapatas():
     global deltaperc, p_it1, sigma_pit1, eps_cs, response_data
 
     if request.method == 'POST':
@@ -43,7 +43,7 @@ def handle_concreto():
         )
 
         print(
-            f"[POST /concreto] deltaperc: {deltaperc}, p_it1: {p_it1}, sigma_pit1: {sigma_pit1}, eps_cs: {eps_cs}")
+            f"[POST /sapatas] deltaperc: {deltaperc}, p_it1: {p_it1}, sigma_pit1: {sigma_pit1}, eps_cs: {eps_cs}")
 
         return jsonify({
             'deltaperc':  f'{deltaperc:.2f} %',
