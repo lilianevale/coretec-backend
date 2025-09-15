@@ -28,25 +28,27 @@ def handle_user_data():
 
         # chamada para cálculo
         fig, sigma_med, raio, sigma_maxx, sigma_minn, theta_p_graus, theta_c_graus = circulo_mohr_2d(sig_x, sig_y, tau, impressoes=True)
+        st.pyplot(fig)
         response_data = { 
-            'x_ii'      : f'{x_ii*1e2:.3e} cm',
-            'i_ii'      : f'{i_ii:.3e} m\u2074',
-            'a_1'       : f'{a_1*1e2:.3e} cm',
-            'a_2'       : f'{a_2*1e4:.3e} cm²',
-            'a_3'       : f'{a_3*1e6:.3e} cm³',
-            'passa_onde': passa_onde,
-            'x_ii_teste': f'{x_ii_teste*1e2:.3e} cm',
+           'sigma_med':  f'{sigma_med:.3e}',
+                 'raio':   f'{raio:.3e}',
+                   'sigma_maxx': f'{sigma_maxx:.3e}',
+                   'sigma_minn': f'{sigma_minn:.3e}',
+                   'theta_p_graus': f'{theta_p_graus:.3f} º',
+                   'theta_c_graus': f'{theta_c_graus:.3f} º',
+                    'fig': fig,
         }
 
     elif request.method == 'GET':
         response_data = { 
-            'x_ii'      : f'{x_ii*1e2:.3e} cm',
-            'i_ii'      : f'{i_ii:.3e} m\u2074',
-            'a_1'       : f'{a_1*1e2:.3e} cm',
-            'a_2'       : f'{a_2*1e4:.3e} cm²',
-            'a_3'       : f'{a_3*1e6:.3e} cm³',
-            'passa_onde': passa_onde,
-            'x_ii_teste': f'{x_ii_teste*1e2:.3e} cm',
+           'sigma_med':  f'{sigma_med:.3e}',
+                 'raio':   f'{raio:.3e}',
+                   'sigma_maxx': f'{sigma_maxx:.3e}',
+                   'sigma_minn': f'{sigma_minn:.3e}',
+                   'theta_p_graus': f'{theta_p_graus:.3f} º',
+                   'theta_c_graus': f'{theta_c_graus:.3f} º',
+                   'fig': fig,
+
         }
         print("response_data", response_data)
 
