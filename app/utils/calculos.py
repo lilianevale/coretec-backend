@@ -114,7 +114,28 @@ def prop_geometrica_estadio_i(H, H_F, B_F, B_W, A_ST, ALPHA_MOD, D, PRINT=False)
     
     return A_CI, X_I, I_I, W_INF, W_SUP
 
-
+def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
+    """Está função determina o círculo de Mohr para tensões planas 2D.
+    
+    Args:
+        sigma_x (float): Tensão normal em x.
+        sigma_y (float): Tensão normal em y.
+        tal_xy (float): Tensão de cisalhamento xy.
+        impressoes (bool): Se True, imprime os valores calculados.
+    
+    Returns:
+        fig: Retorna a figura com o círculo de Mohr.
+    """
+    
+    # Determinação das tensões máximas, mínimas e suas inclinações
+    sigma_med = (sigma_x + sigma_y) / 2
+    raio = np.sqrt((0.50 * (sigma_x - sigma_y))**2 + tal_xy**2)
+    sigma_maxx = sigma_med + raio
+    sigma_minn = sigma_med - raio
+    theta_p_radianos = np.arctan2(2*tal_xy, (sigma_x-sigma_y)) / 2
+    theta_p_graus = np.degrees(theta_p_radianos)
+    theta_c_radianos = np.arctan2(-(sigma_x-sigma_y), 2*tal_xy) / 2
+    theta_c_graus = np.degrees(theta_c_radianos)
 
 def area_aco_flexao_simples(b_w, h, d, f_ck, f_ywk, gamma_c, gamma_s, m_sd, v_sd, cob, phi_est, d_max, impressao=False):
     """
