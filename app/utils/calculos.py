@@ -6,6 +6,19 @@ import base64
 import os
 import uuid
 
+
+def run_python_script():
+    # Usando sys.executable para garantir que o mesmo Python do ambiente Streamlit seja usado
+    result = subprocess.run([sys.executable, './paginas/otimizador/hill_climbing.py'], capture_output=True, text=True)
+
+    if result.returncode == 0:
+        st.write("Resultado do script:")
+        st.text(result.stdout)  # Exibe a saída do script
+    else:
+        st.write("Erro ao executar o script:")
+        st.text(result.stderr)  # Exibe o erro, caso haja
+    
+
 def prop_geometrica_estadio_ii(H_F, B_F, B_W, A_ST, A_SC, ALPHA_MOD, D, D_L, PRINT=False):
     """
     Esta função calcula as propriedades geométricas de uma peça de concreto armado no estádio II.
