@@ -65,7 +65,10 @@ def prop_geometrica_estadio_ii(H_F, B_F, B_W, A_ST, A_SC, ALPHA_MOD, D, D_L, PRI
 
     return X_II, I_II, A_1, A_2, A_3, PASSA_ONDE, X_IITESTE
 
-
+def vazio():
+    texto = r'''
+    '''
+    st.write(texto)
 def prop_geometrica_estadio_i(H, H_F, B_F, B_W, A_ST, ALPHA_MOD, D, PRINT=False):
     """
     Esta função calcula as propriedades geométricas de uma peça de concreto armado no estádio I.
