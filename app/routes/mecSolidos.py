@@ -7,12 +7,12 @@ mecSolidos_bp = Blueprint('mecSolidos', __name__)
 
 # Variáveis globais
 sig_x, sig_y, tau=0,0,0
-
+fig, sigma_med, raio, sigma_maxx, sigma_minn, theta_p_graus, theta_c_graus=None,0,0,0,0,0,0
 response_data = {}
 
 @mecSolidos_bp.route('/mecSolidos', methods=['POST', 'GET'])
 def handle_user_data():
-    global response_data, sig_x, sig_y, tau
+    global response_data, sig_x, sig_y, tau, fig, sigma_med, raio, sigma_maxx, sigma_minn, theta_p_graus, theta_c_graus
     
         step=1e-8
     if request.method == 'POST':
