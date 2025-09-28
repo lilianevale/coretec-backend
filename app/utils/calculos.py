@@ -6,6 +6,87 @@ import base64
 import os
 import uuid
 
+def indice_spi(df_inmet):
+    """Determina o Índice de Preciptação Padronizado (SPI) para um determinado DataFrame.
+    
+    Args:
+        df (DataFrame): DataFrame com os dados de preciptação
+    
+    Returns:
+        spi_df (DataFrame): DataFrame com os valores do SPI
+    """
+
+    # Limpeza dos dados
+    df = df_inmet
+    df_precip = df.drop(columns=['Unnamed: 2'])
+    df_precip.columns = ['Data Medição', 'Precipitação Total Diária (mm)']
+    df_precip['Precipitação Total Diária (mm)'] = df_precip['Precipitação Total Diária (mm)'].str.replace(',', '.').astype(float)
+    df_precip['Data Medição'] = pd.to_datetime(df_precip['Data Medição'], format='%Y-%m-%d')
+    df_precip['Precipitação Total Diária (mm)'] = pd.to_numeric(df_precip['Precipitação Total Diária (mm)'], errors='coerce')
+
+    # Agrupar por mês e somar a precipitação diária para obter precipitação mensal
+    df_precip['AnoMes'] = df_precip['Data Medição'].dt.to_period('M')  # Criar uma coluna com o ano e mês
+    precip_mensal = df_precip.groupby('AnoMes')['Precipitação Total Diária (mm)'].sum()  # Soma a precipitação diária para obter mensal
+
+    # Função para calcular o SPI considerando precipitação zero
+   
+    def calcular_spi(precipitacao_mensal):
+        
+        spi_mensal = []
+        estatisticas = [] 
+
+        # Iterar sobre os 12 meses do ano
+        for mes in range(1, 13):
+            # Filtrar os dados referentes a cada mês
+            dados_mes = precipitacao_mensal[precipitacao_mensal.index.month == mes]
+          
+            # Calcular a média mensal
+            media = np.mean(dados_mes)
+
+            # Separar os valores de precipitação zero e positivos
+            zeros = (dados_mes == 0).sum()
+            positivos = dados_mes[dados_mes > 0]
+            
+            # Probabilidade de zeros
+            prob_zeros = zeros / len(dados_mes)
+            
+            # Ajustar a distribuição gama aos valores positivos
+            shape, loc, scale = gamma.fit(positivos, floc=0)
+            cdf = gamma.cdf(dados_mes, shape, loc=loc, scale=scale)
+            
+            # Ajustar a CDF para lidar com zeros
+            cdf_adjusted = prob_zeros + (1 - prob_zeros) * cdf
+            
+            # Convertendo a CDF ajustada para a distribuição normal padrão (SPI)
+            spi_mes = norm.ppf(cdf_adjusted)
+            
+            # Armazenar os valores de SPI para o mês atual
+            spi_mensal.extend(spi_mes)
+        
+            # Armazenar as estatísticas do mês
+            estatisticas.append({
+                        'Mês': mes,
+                        'Média Mensal': media,
+                        'q (zeros)': prob_zeros,
+                        'Alpha (shape)': shape,
+                        'Beta (scale)': scale
+            })
+
+
+        return spi_mensal, estatisticas
+    
+    # Calcular o SPI mensal e estatísticas por mês do ano
+    spi_mensal, estatisticas = calcular_spi(precip_mensal)
+
+    # Criar um DataFrame com os resultados
+    spi_df = pd.DataFrame({'AnoMes': precip_mensal.index, 'PrecipitaçãoMensal': precip_mensal.values, 'SPI': spi_mensal})
+    estatisticas_df = pd.DataFrame(estatisticas)
+
+    # Exibir a tabela com o SPI calculado
+    print(spi_df)
+    print(estatisticas_df)
+
+    return spi_df, estatisticas_df
 def calculo_precipitacoes(df_inmet):
     """Determina as preciptações e intensidades máximas em função de diversos tempos de retorno e tempos de duraçao.
     
