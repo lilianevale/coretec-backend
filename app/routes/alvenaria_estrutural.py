@@ -39,22 +39,15 @@ def tensao_elastica_vao():
         n_pavtos= float(pav1)
         comp_estrutura= float(estr1)
         larg_estrutura= float(larg1)
-        tipo_argamassa = float(
+        tipo_argamassa = float(argamassa1)
         
-        a_c = float(viga1)
-        i_c = float(iviga1)
-        y_t = float(distanciatopo1)
-        y_b = float(distancia1)
-
+        
         file = request.files.get('arq1')
         if file:
             df = pd.read_excel(file)
             print(f"[POST /tensaoelasticavao] Arquivo recebido: {df.shape}")
 
-            sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv, imagem_url = tensoes_vao_completo(
-                df, a_c * 1E-4, i_c * 1E-8, y_t * 1E-2, y_b * 1E-2
-            )
-
+            n_rd, n_sd, g_0, dados_parede = projeto_paredes_compressao(df, gamma_f, gamma_w, f_pk, g_laje, q_laje, g_pare, n_pavtos, comp_estrutura, larg_estrutura, tipo_argamassa)
             return jsonify({
                 'imagem_url': imagem_url,
                 'sigma_t_vazio1': sigma_t_vazio,
