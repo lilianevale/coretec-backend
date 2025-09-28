@@ -10,16 +10,16 @@ df = None
 response_data = {}
 
 
-@idf_bp.route('/idf', methods=['POST', 'GET'])
-def tensao_elastica_vao():
+@idf_bp.route('/spi', methods=['POST', 'GET'])
+def spi():
     global h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao, df
 
 
     if request.method == 'POST':
         file = request.files.get('arq1')
         if file:
-            df = pd.read_excel(file)
-            print(f"[POST /idf] Arquivo recebido: {df.shape}")
+            df = pd.read_csv(file, sep=';', skiprows=10)
+            print(f"[POST /spi] Arquivo recebido: {df.shape}")
 
             h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao = calculo_precipitacoes(df)
             a, b, c, d = problema_inverso_idf(df_longo)
