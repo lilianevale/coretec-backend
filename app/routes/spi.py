@@ -5,6 +5,7 @@ from app.utils.calculos import calculo_precipitacoes, problema_inverso_idf, indi
 spi_bp = Blueprint('spi', __name__)
 
 # Variáveis globais
+imagem_url=None
 spi_df, estatisticas_df=0,0
 df = None
 response_data = {}
@@ -12,7 +13,7 @@ response_data = {}
 
 @spi_bp.route('/spi', methods=['POST', 'GET'])
 def idf():
-    global  spi_df, estatisticas_df, df
+    global  spi_df, estatisticas_df, df, imagem_url
 
 
     if request.method == 'POST':
@@ -64,13 +65,13 @@ def idf():
             return jsonify({
                 'spi_df': spi_df,
                 'estatisticas_df': estatisticas_df,
-                'plt': plt
+                'imagem_url': imagem_url
             })
 
     elif request.method == 'GET':
         response_data = {
             'spi_df': spi_df,
                 'estatisticas_df': estatisticas_df,
-                'plt': plt
+                'imagem_url': imagem_url
         }
         return jsonify(response_data)
