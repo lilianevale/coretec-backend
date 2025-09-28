@@ -427,6 +427,7 @@ def prop_geometrica_estadio_i(H, H_F, B_F, B_W, A_ST, ALPHA_MOD, D, PRINT=False)
     
     return A_CI, X_I, I_I, W_INF, W_SUP
 
+
 def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
     """Está função determina o círculo de Mohr para tensões planas 2D.
     
@@ -449,8 +450,86 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
     theta_p_graus = np.degrees(theta_p_radianos)
     theta_c_radianos = np.arctan2(-(sigma_x-sigma_y), 2*tal_xy) / 2
     theta_c_graus = np.degrees(theta_c_radianos)
+    def calcular_ponto_circunferencia(x_c, y_c, raio, angulo_graus):
+        angulo_radianos = np.radians(angulo_graus)
+        x = x_c + raio * np.cos(angulo_radianos)
+        y = y_c + raio * np.sin(angulo_radianos)
+        return x, y
+    sigma_x_linha1, sigma_y_linha1 = calcular_ponto_circunferencia(sigma_med, 0, raio, -theta_p_graus)
+    sigma_x_linha2, sigma_y_linha2 = calcular_ponto_circunferencia(sigma_med, 0, raio, -theta_p_graus+180)
 
-def area_aco_flexao_simples(b_w, h, d, f_ck, f_ywk, gamma_c, gamma_s, m_sd, v_sd, cob, phi_est, d_max, impressao=False):
+    # Criando uma nova figura
+    fig, ax = plt.subplots()
+
+    # Centro e raio da circunferência
+    x_c, y_c = sigma_med, 0
+
+    # Criando os pontos para a circunferência
+    theta = np.linspace(0, 2*np.pi, 100)
+    x_circle = x_c + raio * np.cos(theta)
+    y_circle = y_c + raio * np.sin(theta)
+
+    # Plotando a circunferência
+    ax.plot(x_circle, y_circle, color='blue')
+
+    # Pontos de sigma_min e sigma_max
+    sigma_min = (sigma_minn, 0)
+    sigma_max = (sigma_maxx, 0)
+
+    # Plotando os pontos de máximo e mínimo e adicionando as anotações
+    ax.scatter(*sigma_min, color='red')
+    ax.text(sigma_min[0]-0.27*np.abs(sigma_min[0]), raio*0.10, f'σmin=\n{sigma_minn:.3f}', verticalalignment='top', horizontalalignment='left', color='red')
+    ax.scatter(*sigma_max, color='red')
+    ax.text(sigma_max[0]+0.15*np.abs(sigma_max[0]), raio*0.10, f'σmax=\n{sigma_maxx:.3f}', verticalalignment='top', horizontalalignment='left', color='red')
+    
+    # Plotando os pontos A e B
+    xa, ya = sigma_x, tal_xy
+    xb, yb = sigma_y, -tal_xy
+    m = (yb - ya) / (xb - xa)
+    b = ya - m * xa
+    # print(f"m = {m}")
+    # print(f"b = {b}")
+    # print(f"xa = {xa}")
+    # print(f"ya = {ya}")
+    # print(f"xb = {xb}")
+    # print(f"yb = {yb}")
+    # print(xb-0.30*xb)
+    ax.plot([xa, xb], [ya, yb], color='magenta')
+    ax.scatter([xa, xb], [ya, yb], color='magenta')
+    ax.text(xa+0.27*xa, m*(xa+0.27*xa)+b, 'A=σx,τxy', verticalalignment='bottom', horizontalalignment='left', color='magenta')
+    ax.text(xb+0.27*xb, m*(xb+0.27*xb)+b, 'B=σy,-τxy', verticalalignment='bottom', horizontalalignment='left', color='magenta')
+
+    # Adicionando o eixo x passando por y=0
+    ax.axhline(y=0, color='black', linestyle='--')
+    ax.axvline(x=sigma_med, color='black', linestyle='--')
+
+    # Adicionando legendas e título
+    ax.set_xlabel('Eixo x')
+    ax.set_ylabel('Eixo y')
+
+    # Definindo limites dos eixos
+    ax.set_xlim(x_c - raio - 5, x_c + raio + 5)
+    ax.set_ylim(-raio - 1, raio + 1)
+
+    # Exibindo o gráfico
+    ax.grid(True, alpha=0.5)
+    ax.axis('equal')
+    plt.gca().invert_yaxis()
+    # plt.show()
+
+    if impressoes is True:
+        print(f"sigma_med = {sigma_med:.3e}")
+        print(f"tal_max = {raio:.3e}")
+        print(f"sigma_max = {sigma_maxx:.3e}")
+        print(f"sigma_min = {sigma_minn:.3e}")
+        print(f"inclinação tensões principais theta_p = {theta_p_graus:.3e}")
+        print(f"inclinação tensão máxima cisalhamento theta_c = {theta_c_graus:.3e}")
+        print(f"sigma_x_linha1 = {sigma_x_linha1:.3e}")
+        print(f"sigma_y_linha1 = {sigma_y_linha1:.3e}")
+        print(f"sigma_x_linha2 = {sigma_x_linha2:.3e}")
+        print(f"sigma_y_linha2 = {sigma_y_linha2:.3e}")
+
+    return fig, sigma_med, raio, sigma_maxx, sigma_minn, theta_p_graus, theta_c_grausdef area_aco_flexao_simples(b_w, h, d, f_ck, f_ywk, gamma_c, gamma_s, m_sd, v_sd, cob, phi_est, d_max, impressao=False):
     """
     Esta função determina a área de aço necessária para combater os esforços de flexão na peça de concreto armado de acordo com a NBR 6118.
 
