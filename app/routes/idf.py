@@ -18,7 +18,7 @@ def idf():
     if request.method == 'POST':
         file = request.files.get('arq1')
         if file:
-            df = pd.read_excel(file)
+            df = pd.read_excel(file, sep=';', skiprows=10)
             print(f"[POST /idf] Arquivo recebido: {df.shape}")
 
             h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao = calculo_precipitacoes(df)
