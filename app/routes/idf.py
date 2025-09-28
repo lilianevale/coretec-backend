@@ -5,14 +5,14 @@ from app.utils.calculos import calculo_precipitacoes, problema_inverso_idf, indi
 idf_bp = Blueprint('idf', __name__)
 
 # Variáveis globais
-h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao
+spi_df, estatisticas_df=0,0
 df = None
 response_data = {}
 
 
 @idf_bp.route('/idf', methods=['POST', 'GET'])
 def idf():
-    global h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao, df
+    global  spi_df, estatisticas_df, df
 
 
     if request.method == 'POST':
@@ -20,23 +20,48 @@ def idf():
         if file:
             df = pd.read_excel(file, sep=';', skiprows=10)
             print(f"[POST /idf] Arquivo recebido: {df.shape}")
+            nome_arquivo = ile.name
+            nome_arquivo = file.name.replace('.csv', '')
+            spi_df, estatisticas_df = indice_spi(df) 
 
-            h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao = calculo_precipitacoes(df)
-            a, b, c, d = problema_inverso_idf(df_longo)
+            
+                # Agora vamos adicionar o gráfico
+                import matplotlib.pyplot as plt
+                plt.figure(figsize=(10, 6))
+                plt.bar(spi_df['AnoMes'].astype(str), spi_df['SPI'], color='b')
+
+                # Sombrear áreas de classificação
+                plt.fill_between(spi_df['AnoMes'].astype(str), -3, -2, color='red', alpha=0.3, label='Extrema Seca (SPI < -2.0)')
+                plt.fill_between(spi_df['AnoMes'].astype(str), -2, -1.5, color='orange', alpha=0.3, label='Muita Seca (-2.0 ≤ SPI < -1.5)')
+                plt.fill_between(spi_df['AnoMes'].astype(str), -1.5, -1.0, color='yellow', alpha=0.3, label='Moderada Seca (-1.5 ≤ SPI ≤ -1.0)')
+                plt.fill_between(spi_df['AnoMes'].astype(str), -1.0, 1.0, color='green', alpha=0.3, label='Condições Normais (-1.0 < SPI < 1.0)')
+                plt.fill_between(spi_df['AnoMes'].astype(str), 1.0, 1.5, color='cyan', alpha=0.3, label='Moderada Umidade (1.0 ≤ SPI < 1.5)')
+                plt.fill_between(spi_df['AnoMes'].astype(str), 1.5, 2.0, color='blue', alpha=0.3, label='Muita Umidade (1.5 ≤ SPI < 2.0)')
+                plt.fill_between(spi_df['AnoMes'].astype(str), 2.0, 3, color='purple', alpha=0.3, label='Extrema Umidade (SPI ≥ 2.0)')
+
+                # Configurações do gráfico
+                plt.xlabel('Mês')
+                plt.ylabel('SPI')
+                plt.title('SPI Mensal (Índice de Precipitação Padronizado)')
+                
+                # Filtrar os meses de janeiro de cada ano para o eixo X
+                ticks_to_show = spi_df[spi_df['AnoMes'].dt.month == 1]['AnoMes'].astype(str)
+                plt.xticks(ticks=ticks_to_show.index, labels=ticks_to_show, rotation=90, fontsize=8)
+
+                plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)  # Ajustar a posição da legenda
+                plt.tight_layout()
+
+                pyplot(plt)
             return jsonify({
-                'imagem_url': imagem_url,
-                'sigma_t_vazio1': sigma_t_vazio,
-                'sigma_b_vazio1': sigma_b_vazio,
-                'sigma_t_serv1': sigma_t_serv,
-                'sigma_b_serv1': sigma_b_serv
+                'spi_df': spi_df,
+                'estatisticas_df': estatisticas_df,
+                'plt': plt
             })
 
     elif request.method == 'GET':
         response_data = {
-            'imagem_url': imagem_url,
-            'sigma_t_vazio1': sigma_t_vazio,
-            'sigma_b_vazio1': sigma_b_vazio,
-            'sigma_t_serv1': sigma_t_serv,
-            'sigma_b_serv1': sigma_b_serv
+            'spi_df': spi_df,
+                'estatisticas_df': estatisticas_df,
+                'plt': plt
         }
         return jsonify(response_data)
