@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 import pandas as pd
 from app.utils.calculos import calculo_precipitacoes, problema_inverso_idf, indice_spi, tutorial_idf, teoria_idf, pbl_idf, tutorial_spi, teoria_spi, pbl_spi
 
-tensao_bp = Blueprint('idf', __name__)
+idf_bp = Blueprint('idf', __name__)
 
 # Variáveis globais
 h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao
@@ -11,7 +11,7 @@ response_data = {}
 
 
 @idf_bp.route('/idf', methods=['POST', 'GET'])
-def tensao_elastica_vao():
+def idf():
     global h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao, df
 
 
