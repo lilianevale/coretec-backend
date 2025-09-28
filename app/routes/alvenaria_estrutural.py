@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 import pandas as pd
-from app.utils.calculos import tensao_topo_base, tensoes_vao_completo
+from app.utils.calculos import projeto_paredes_compressao
 
 alvenaria_bp = Blueprint('colapsoProgressivo', __name__)
 
