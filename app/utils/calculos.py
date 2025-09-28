@@ -6,6 +6,75 @@ import base64
 import os
 import uuid
 
+
+def projeto_paredes_compressao(dados_parede_aux, gamma_f, gamma_w, f_pk, g, q, g_wall, n_pavtos, x_total, y_total, tipo_argamassa):
+    """
+    Verificação de projeto de paredes à compressão.
+    
+    Args:
+        dados_parede_aux (pd.DataFrame): dataframe contendo os dados das paredes
+        gamma_f (float): coeficiente de ponderação das ações permanentes
+        gamma_w (float): coeficiente de ponderação das ações variáveis
+        f_pk (float): resistência característica à compressão do bloco
+        g (float): carga permanente da laje
+        q (float): carga variável da laje
+        g_wall (float): carga do peso próprio da parede
+        n_pavtos (int): número de pavimentos
+        x_total (float): comprimento total da estrutura
+        y_total (float): largura total da estrutura
+        tipo_argamassa (str): tipo de argamassa
+        
+        Returns:
+        n_rd (list): lista contendo as resistências de cada parede
+        n_sd (list): lista contendo as ações de cada parede
+        g_0 (list): lista contendo os coeficientes de segurança de cada parede
+        dados_parede (pd.DataFrame): dataframe contendo os dados das paredes
+    """
+
+    # Dados geométricos do modelo
+    dados_parede = dados_parede_aux.copy()
+    dados_parede['carga g laje (kN)'] = x_total * y_total * g
+    dados_parede['carga q laje (kN)'] = x_total * y_total * q 
+    dados_parede['area (m2)'] = dados_parede['l (m)'] * dados_parede['t (m)']
+    dados_parede['area . x_g (m3)'] = dados_parede['area (m2)'] * dados_parede['x_g (m)']
+    dados_parede['area . y_g (m3)'] = dados_parede['area (m2)'] * dados_parede['y_g (m)']
+    x_g_global = dados_parede['area . x_g (m3)'].sum() / dados_parede['area (m2)'].sum()
+    y_g_global = dados_parede['area . y_g (m3)'].sum() / dados_parede['area (m2)'].sum()
+    dados_parede['x_1g (m)'] = dados_parede['x_g (m)'] - x_g_global
+    dados_parede['y_1g (m)'] = dados_parede['y_g (m)'] - y_g_global
+    dados_parede['area . x_g . x_g (m4)'] = dados_parede['area (m2)'] * dados_parede['x_1g (m)'] ** 2
+    dados_parede['area . y_g . y_g (m4)'] = dados_parede['area (m2)'] * dados_parede['y_1g (m)'] ** 2
+    e_x = x_total / 2 - x_g_global
+    e_y = y_total / 2 - y_g_global
+    ai_soma = dados_parede['area (m2)'].sum()
+    aix_soma = dados_parede['area . x_g . x_g (m4)'].sum() 
+    aiy_soma = dados_parede['area . y_g . y_g (m4)'].sum()
+    
+    # Cálculo do carregamento de cada parede
+    dados_parede['parcela quinhão (valor/100)'] = dados_parede.apply(quinhao_de_carga, axis = 1, args = (ai_soma, aix_soma, aiy_soma, e_x, e_y))
+    dados_parede['parcela_gi (kN)'] = dados_parede['carga g laje (kN)'] * dados_parede['parcela quinhão (valor/100)']
+    dados_parede['parcela_gi_pp (kN)'] = g_wall * dados_parede['h (m)'] * dados_parede['l (m)']
+    dados_parede['parcela_gi_total (kN)'] = dados_parede['parcela_gi (kN)'] + dados_parede['parcela_gi_pp (kN)']
+    dados_parede['parcela_qi (kN)'] = dados_parede['carga q laje (kN)'] * dados_parede['parcela quinhão (valor/100)']
+    dados_parede['n_sd (kN)'] = (dados_parede['parcela_qi (kN)'] + dados_parede['parcela_gi_total (kN)']) * gamma_f * n_pavtos
+
+    # Cálculo da resistência de cada parede
+    dados_parede['lambda'] = dados_parede['h (m)'] / dados_parede['t (m)']
+    dados_parede['redutor R de resistência'] = 1 - (dados_parede['lambda'] / 40) ** 3
+    if tipo_argamassa == 'total' or tipo_argamassa == 'argamassa de bloco inteiro':
+        alpha_arg = 1.00
+    else:
+        alpha_arg = 0.80
+    f_pd = 0.70 * (f_pk / gamma_w) * alpha_arg
+    dados_parede['n_rd (kN)'] = dados_parede['area (m2)'] * f_pd * dados_parede['redutor R de resistência']
+    dados_parede['g (kN)'] = dados_parede['n_sd (kN)'] - dados_parede['n_rd (kN)']
+    n_rd = dados_parede['n_rd (kN)'].tolist()
+    n_sd = dados_parede['n_sd (kN)'].tolist()
+    g_0 = dados_parede['g (kN)'].tolist()
+    
+    return n_rd, n_sd, g_0, dados_parede
+
+
 def download_excel(df, nome_df):
     if df is not None:
         excel_file_name = nome_df.split(".")[0] + "_copia.xlsx"
