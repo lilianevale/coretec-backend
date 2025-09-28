@@ -52,6 +52,15 @@ def idf():
                 plt.tight_layout()
 
                 pyplot(plt)
+            # Salvar imagem na pasta do projeto
+        nome_arquivo = f"vao_{uuid.uuid4().hex[:8]}.png"
+        pasta_destino = os.path.join("app", "static", "imagens")
+        os.makedirs(pasta_destino, exist_ok=True)
+        caminho_completo = os.path.join(pasta_destino, nome_arquivo)
+        fig.savefig(caminho_completo, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+
+        imagem_url = f"/static/imagens/{nome_arquivo}"
             return jsonify({
                 'spi_df': spi_df,
                 'estatisticas_df': estatisticas_df,
