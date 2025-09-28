@@ -1,81 +1,28 @@
 from flask import Blueprint, request, jsonify
 import pandas as pd
-from app.utils.calculos import tensao_topo_base, tensoes_vao_completo
+from app.utils.calculos import calculo_precipitacoes, problema_inverso_idf, indice_spi, tutorial_idf, teoria_idf, pbl_idf, tutorial_spi, teoria_spi, pbl_spi
 
-tensao_bp = Blueprint('tensao', __name__)
+tensao_bp = Blueprint('idf', __name__)
 
 # Variáveis globais
-sigma_t = sigma_b = 0
-imagem_url=None
-sigma_t_vazio = sigma_b_vazio = sigma_t_serv = sigma_b_serv = []
+h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao
 df = None
 response_data = {}
 
 
-@tensao_bp.route('/tensaoelastica', methods=['POST', 'GET'])
-def tensao_elastica():
-    global sigma_t, sigma_b, response_data, imagem_url
-
-    if request.method == 'POST':
-        data = request.get_json()
-
-        # Coleta e conversão dos dados
-        a_c = float(data.get('viga1'))              # Área da seção (cm²)
-        i_c = float(data.get('iviga1'))             # Inércia (cm⁴)
-        y_t = float(data.get('distanciatopo1'))     # Distância topo (cm)
-        y_b = float(data.get('distancia1'))         # Distância base (cm)
-        e_p = float(data.get('excentricidade1'))    # Excentricidade (cm)
-        p_id = float(data.get('protensao1'))        # Protensão (kN)
-        m_sd = float(data.get('fletor1'))           # Momento (kNm)
-
-        # Cálculo
-        sigma_t, sigma_b, imagem_url = tensao_topo_base(
-            a_c * 1E-4, i_c * 1E-8,
-            y_t * 1E-2, y_b * 1E-2,
-            e_p * 1E-2, p_id, m_sd
-        )
-
-        return jsonify({
-            'sigma_t1': f'{sigma_t/1000 :.3e} MPa',
-            'sigma_b1': f'{sigma_b/1000 :.3e} MPa',
-            'imagem_url': imagem_url
-        })
-
-    elif request.method == 'GET':
-        response_data = {
-            'sigma_t1': f'{sigma_t/1000 :.3e} MPa',
-            'sigma_b1': f'{sigma_b/1000 :.3e} MPa',
-            'imagem_url': imagem_url
-
-        }
-        return jsonify(response_data)
-
-
-@tensao_bp.route('/tensaoelasticavao', methods=['POST', 'GET'])
+@idf_bp.route('/idf', methods=['POST', 'GET'])
 def tensao_elastica_vao():
-    global sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv, df, response_data, imagem_url
+    global h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao, df
+
 
     if request.method == 'POST':
-        # Recebe os dados do formulário multipart/form-data
-        viga1 = request.form.get('viga1')
-        iviga1 = request.form.get('iviga1')
-        distanciatopo1 = request.form.get('distanciatopo1')
-        distancia1 = request.form.get('distancia1')
-
-        a_c = float(viga1)
-        i_c = float(iviga1)
-        y_t = float(distanciatopo1)
-        y_b = float(distancia1)
-
         file = request.files.get('arq1')
         if file:
             df = pd.read_excel(file)
-            print(f"[POST /tensaoelasticavao] Arquivo recebido: {df.shape}")
+            print(f"[POST /idf] Arquivo recebido: {df.shape}")
 
-            sigma_t_vazio, sigma_b_vazio, sigma_t_serv, sigma_b_serv, imagem_url = tensoes_vao_completo(
-                df, a_c * 1E-4, i_c * 1E-8, y_t * 1E-2, y_b * 1E-2
-            )
-
+            h_max1, preciptacao, intensidade, df_longo, media, desvio_padrao = calculo_precipitacoes(df)
+            a, b, c, d = problema_inverso_idf(df_longo)
             return jsonify({
                 'imagem_url': imagem_url,
                 'sigma_t_vazio1': sigma_t_vazio,
