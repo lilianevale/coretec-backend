@@ -6,6 +6,100 @@ import base64
 import os
 import uuid
 
+def calculo_precipitacoes(df_inmet):
+    """Determina as preciptações e intensidades máximas em função de diversos tempos de retorno e tempos de duraçao.
+    
+    Args:
+        df_inmet (DataFrame): DataFrame com os dados de preciptação retirados do INMET
+        
+    Returns:
+        h_max1aux (DataFrame): Valores de preciptação diária (mm) para os tempos de retorno selecionados (ano)
+        preciptacao (DataFrame): Preciptação máxima para os tempos de retorno e tempos de duração selecionados
+        intensidade (DataFrame): Intensidade de preciptação máxima para os tempos de retorno e duraçoes selecionadas
+        df_longo (DataFrame): DataFrame com os valores de intensidade, preciptação máxima em funçao dos tempos de duraçao (min) e tempos de retorno (ano)
+    """
+
+    # Limpeza dos dados
+    # Detectar o nome correto da coluna e renomear
+    df = df_inmet
+    if 'PRECIPITACAO TOTAL, DIARIO (AUT)(mm)' in df.columns:
+        df.rename(columns={'PRECIPITACAO TOTAL, DIARIO (AUT)(mm)': 'PRECIPITACAO TOTAL DIARIA (mm)'}, inplace=True)
+    elif 'PRECIPITACAO TOTAL, DIARIO(mm)' in df.columns:
+        df.rename(columns={'PRECIPITACAO TOTAL, DIARIO(mm)': 'PRECIPITACAO TOTAL DIARIA (mm)'}, inplace=True)
+    else:
+        nomes_esperados = ['PRECIPITACAO TOTAL DIARIA (mm)']
+        colunas_atuais = df.columns.tolist()
+        # Verifica possíveis correspondências incorretas
+        colunas_erradas = [col for col in colunas_atuais if 'PRECIPITACAO' in col]
+        st.error("A coluna de precipitação não foi encontrada.")
+        st.write("Colunas com possíveis erros:")
+        st.table(colunas_erradas)
+        st.write(f"O nome correto esperado é: <span style='color:green'>{nomes_esperados[0]}</span>", unsafe_allow_html=True)
+        st.write("Colunas disponíveis no DataFrame:")
+        st.table(colunas_atuais)
+        st.stop()
+    
+    df['Data Medicao'] = pd.to_datetime(df['Data Medicao'])
+    df['ano hidrológico'] = df['Data Medicao'].dt.year
+    df['PRECIPITACAO TOTAL DIARIA (mm)'] = pd.to_numeric(df['PRECIPITACAO TOTAL DIARIA (mm)'], errors='coerce')
+    df.dropna(subset=['PRECIPITACAO TOTAL DIARIA (mm)'], inplace=True)
+
+    # Preciptação máxima por ano e estatística descritiva dos dados
+    maiores_precipitacoes_por_ano = df.groupby('ano hidrológico')['PRECIPITACAO TOTAL DIARIA (mm)'].max()
+    media = maiores_precipitacoes_por_ano.mean()
+    desvio_padrao = maiores_precipitacoes_por_ano.std() 
+    tempo_retorno = [2, 5, 10, 15, 20, 25, 50, 100, 250, 500, 1000]
+    h_max1 = [calcular_hmax(media, desvio_padrao, tr) for tr in tempo_retorno]
+    h_max1aux = pd.DataFrame({'tempo de retorno (anos)': tempo_retorno, 'Pmax diária (mm)': h_max1})
+
+    # Desagregação da preciptação e intensidade
+    preciptacao = desagragacao_preciptacao(h_max1)
+    intensidade = conversao_intensidade(preciptacao)
+
+    # Geração tabela IDF
+    df_longo = intensidade.melt(id_vars='td (min)', var_name='tr', value_name='y_obs (mm/h)')
+    df_longo['tr'] = df_longo['tr'].astype(float)
+
+    return h_max1aux, preciptacao, intensidade, df_longo, media, desvio_padrao
+
+
+def problema_inverso_idf(df_long):
+    """Está função determina os parâmetros da equação IDF a partir dos dados de intensidade de preciptação máxima diária.
+    
+    Args:
+        df_long (DataFrame): DataFrame com os valores de intensidade de preciptação máxima diária para os tempos de retorno selecionados (mm/h)
+        
+    Returns:
+        a_opt (Float): Parâmetro a da equação IDF
+        b_opt (Float): Parâmetro b da equação IDF
+        c_opt (Float): Parâmetro c da equação IDF
+        d_opt (Float): Parâmetro d da equação IDF
+    """
+
+    # Dados para confecção do IDF
+    t_r = df_long['tr'].values 
+    t_c = df_long['td (min)'].values  
+    y_obs = df_long['y_obs (mm/h)'].values 
+
+    # Equação de predição do IDF
+ # Equação de predição do IDF
+    def model_function(params, t_r, t_c):
+        a, b, c, d = params
+        return (a * t_r ** b) / (t_c + c)**d
+
+    # Equação de erro
+    def error_function(params, t_r, t_c, y_obs):
+        y_pred = model_function(params, t_r, t_c)
+        error = np.mean((y_pred - y_obs) ** 2)
+        return error
+
+    # Problema inverso
+    initial_guess = [0, 0, 0, 0]
+    bounds = [(1e-5, None), (1e-5, None), (1e-5, None), (1e-5, None)]
+    result = minimize(error_function, initial_guess, args=(t_r, t_c, y_obs), bounds=bounds)
+    a_opt, b_opt, c_opt, d_opt = result.x
+
+    return a_opt, b_opt, c_opt, d_opt
 
 def projeto_paredes_compressao(dados_parede_aux, gamma_f, gamma_w, f_pk, g, q, g_wall, n_pavtos, x_total, y_total, tipo_argamassa):
     """
