@@ -12,8 +12,8 @@ response_data = {}
 
 
 
-@tensao_bp.route('/colapsoProgressivo', methods=['POST', 'GET'])
-def tensao_elastica_vao():
+@alvenaria_bp.route('/colapsoProgressivo', methods=['POST', 'GET'])
+def alvenaria():
     global df, gamma_f, gamma_w, f_pk, g_laje, q_laje, g_pare, n_pavtos, comp_estrutura, larg_estrutura, tipo_argamassa
     global n_rd, n_sd, g_0, dados_parede, response_data
 
