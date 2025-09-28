@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 import pandas as pd
 from app.utils.calculos import calculo_precipitacoes, problema_inverso_idf, indice_spi, tutorial_idf, teoria_idf, pbl_idf, tutorial_spi, teoria_spi, pbl_spi
 
-idf_bp = Blueprint('idf', __name__)
+spi_bp = Blueprint('spi', __name__)
 
 # Variáveis globais
 spi_df, estatisticas_df=0,0
@@ -10,7 +10,7 @@ df = None
 response_data = {}
 
 
-@idf_bp.route('/idf', methods=['POST', 'GET'])
+@spi_bp.route('/spi', methods=['POST', 'GET'])
 def idf():
     global  spi_df, estatisticas_df, df
 
@@ -19,7 +19,7 @@ def idf():
         file = request.files.get('arq1')
         if file:
             df = pd.read_excel(file, sep=';', skiprows=10)
-            print(f"[POST /idf] Arquivo recebido: {df.shape}")
+            print(f"[POST /spi] Arquivo recebido: {df.shape}")
             nome_arquivo = ile.name
             nome_arquivo = file.name.replace('.csv', '')
             spi_df, estatisticas_df = indice_spi(df) 
