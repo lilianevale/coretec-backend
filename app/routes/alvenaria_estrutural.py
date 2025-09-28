@@ -45,23 +45,20 @@ def tensao_elastica_vao():
         file = request.files.get('arq1')
         if file:
             df = pd.read_excel(file)
-            print(f"[POST /tensaoelasticavao] Arquivo recebido: {df.shape}")
+            print(f"[POST /colapsoProgressivo] Arquivo recebido: {df.shape}")
 
             n_rd, n_sd, g_0, dados_parede = projeto_paredes_compressao(df, gamma_f, gamma_w, f_pk, g_laje, q_laje, g_pare, n_pavtos, comp_estrutura, larg_estrutura, tipo_argamassa)
             return jsonify({
-                'imagem_url': imagem_url,
-                'sigma_t_vazio1': sigma_t_vazio,
-                'sigma_b_vazio1': sigma_b_vazio,
-                'sigma_t_serv1': sigma_t_serv,
-                'sigma_b_serv1': sigma_b_serv
-            })
+                'n_rd': n_rd,
+                'n_sd': n_sd,
+                'g_0': g_0,
+                'dados_parede': dados_parede            })
 
     elif request.method == 'GET':
         response_data = {
-            'imagem_url': imagem_url,
-            'sigma_t_vazio1': sigma_t_vazio,
-            'sigma_b_vazio1': sigma_b_vazio,
-            'sigma_t_serv1': sigma_t_serv,
-            'sigma_b_serv1': sigma_b_serv
+             'n_rd': n_rd,
+             'n_sd': n_sd,
+              'g_0': g_0,
+             'dados_parede': dados_parede            
         }
         return jsonify(response_data)
