@@ -14,29 +14,33 @@ response_data = {}
 
 @tensao_bp.route('/colapsoProgressivo', methods=['POST', 'GET'])
 def tensao_elastica_vao():
-    global df, gamma_f, gamma_w, f_pk, g_laje, q_laje, g_pare, n_pavtos, comp_estrutura, larg_estrutura, tipo_argamassa, df
+    global df, gamma_f, gamma_w, f_pk, g_laje, q_laje, g_pare, n_pavtos, comp_estrutura, larg_estrutura, tipo_argamassa
+    global n_rd, n_sd, g_0, dados_parede, response_data
 
     if request.method == 'POST':
 
-       acaoperm1 = formData.acaoperm;
-       acaovar1 = formData.acaovar;
-       bloco1 = formData.bloco;
-       lajep1 = formData.lajep;
-       lajev1 = formData.lajev;
-       peso1 = formData.peso;
-       pav1 = formData.pav;
-       estr1 = formData.estr;
-       larg1 = formData.larg;
-       argamassa1=formData.argamassa;
+        acaoperm1 = resquest.form.get(acaoperm1)
+        acaovar1 = resquest.form.get(acaovar1)
+        bloco1 = resquest.form.get(bloco1)
+        lajep1 = resquest.form.get(lajep1)
+        lajev1 = resquest.form.get(lajev1)
+        peso1 = resquest.form.get(peso1)
+        pav1 = resquest.form.get(pav1)
+        estr1 = resquest.form.get(estr1)
+        larg1 = resquest.form.get(larg1)
+        argamassa1=resquest.form.get(argamassa1)
 
-
-
-        # Recebe os dados do formulário multipart/form-data
-        viga1 = request.form.get('viga1')
-        iviga1 = request.form.get('iviga1')
-        distanciatopo1 = request.form.get('distanciatopo1')
-        distancia1 = request.form.get('distancia1')
-
+        gamma_f= float(acaoperm1)
+        gamma_w= float(acaovar1)
+        f_pk= float(bloco1)
+        g_laje= float(lajep1)
+        q_laje= float(lajev1)
+        g_pare= float(peso1)
+        n_pavtos= float(pav1)
+        comp_estrutura= float(estr1)
+        larg_estrutura= float(larg1)
+        tipo_argamassa = float(
+        
         a_c = float(viga1)
         i_c = float(iviga1)
         y_t = float(distanciatopo1)
