@@ -6,6 +6,46 @@ import base64
 import os
 import uuid
 
+def martelo_impacto_resposta_tempo(f, c, k, m, t):
+    """Essa função calcula a resposta de um sistema massa-mola-amortecedor a um martelo de impacto.
+    
+    Args:
+        f (Float): Força do martelo [N.s]
+        c (Float): Coeficiente de amortecimento [N.s/m]
+        k (Float): Coeficiente da rigidez [N/m]
+        m (Float): Massa do sistema [kg]
+        t (Float): Tempo [s]
+    
+    Returns:
+        x (Float): Deslocamento do sistema [m]
+        w_n (Float): Frequência natural do sistema [rad/s]
+    """
+    
+    w_n = np.sqrt(k / m)
+    zeta = c / (2 * m *w_n)
+    w_d = w_n * np.sqrt(1 - zeta ** 2)
+    x = f * (np.exp(-zeta * w_n * t) / m * w_d) * np.sin(w_d * t)
+    
+    return x
+    
+def calcular_r2(y_real, y_predito):
+    """Essa função calcula o coeficiente de determinação R² de um modelo de regressão.
+    
+    Args:
+        y_real (List): Lista com os valores reais
+        y_predito (List): Lista com os valores preditos pelo modelo
+    
+    Returns:
+        r2 (Float): Coeficiente de determinação R²
+    """
+    
+    y_real = np.array(y_real)
+    y_predito = np.array(y_predito)
+    ss_res = np.sum((y_real - y_predito) ** 2)
+    ss_tot = np.sum((y_real - np.mean(y_real)) ** 2)
+
+    return 1 - (ss_res / ss_tot)
+
 def analise_inversa_martelo_impacto(m, c, f, k, dano):
     """Essa função realiza a análise inversa de um sistema massa-mola-amortecedor a um martelo de impacto.
 
