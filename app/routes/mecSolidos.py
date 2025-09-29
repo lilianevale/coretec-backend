@@ -1,6 +1,6 @@
 
 from flask import Blueprint, request, jsonify
-from app.utils.calculos import prop_geometrica_estadio_ii
+from app.utils.calculos import circulo_mohr_2d
 import pandas as pd
 
 mecSolidos_bp = Blueprint('mecSolidos', __name__)
