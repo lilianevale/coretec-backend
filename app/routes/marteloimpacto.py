@@ -1,17 +1,19 @@
 from flask import Blueprint, request, jsonify
 from app.utils.calculos import perda_relax_armadura
 import pandas as pd
+from calculos import vazio, save_figure_temp, save_gif_temp, get_binary_downloader_html
+import analise_inversa_martelo_impacto, martelo_impacto_gif
 
 marteloimpacto_bp = Blueprint('martelo', __name__)
 
 # Variáveis globais como no seu código original
-fig, kk, y=None,0,0 
+gif_buffer, fig, kk, y=None, None,0,0 
 response_data = {}
 
 
 @marteloimpacto_bp.route('/martelo', methods=['POST', 'GET'])
 def handle_martelo():
-    global fig, kk, y, response_data
+    global fig, kk, y, response_data, gif_buffer
     global m, c, f, k, dano
 
     if request.method == 'POST':
@@ -27,20 +29,41 @@ def handle_martelo():
         # Chamada da função de cálculo
           fig, kk, y = analise_inversa_martelo_impacto(m, c, f, k, dano)
         pyplot(fig)
+
+         # Salvar fig na pasta do projeto
+        nome_arquivo = f"vao_{uuid.uuid4().hex[:8]}.png"
+        pasta_destino = os.path.join("app", "static", "imagens")
+        os.makedirs(pasta_destino, exist_ok=True)
+        caminho_completo = os.path.join(pasta_destino, nome_arquivo)
+        fig.savefig(caminho_completo, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+
           gif_buffer = martelo_impacto_gif(y)
+
+        # Salvar gif_buffer na pasta do projeto
+        nome_arquivo = f"vao_{uuid.uuid4().hex[:8]}.png"
+        pasta_destino = os.path.join("app", "static", "imagens")
+        os.makedirs(pasta_destino, exist_ok=True)
+        caminho_completo = os.path.join(pasta_destino, nome_arquivo)
+        gif_buffer.savefig(caminho_completo, dpi=300, bbox_inches='tight')
+        plt.close(gif_buffer)
+
+        
+
+        imagem_url = f"/static/imagens/{nome_arquivo}"
         return jsonify({
             'fig': fig,
+            'gif_buffer': gif_buffer,
             'kk': f'{kk:.2f} N/m',
             
         })
 
     elif request.method == 'GET':
         response_data = {
-            'deltaperc1': f'{deltaperc:.2f} %',
-            'sigma_pit11': f'{sigma_pit1/1000:.3e} MPa',
-            'p_it11': f'{p_it1:.3e} kN',
-            'psi1': f'{psi:.3e} %',
-            'psi_10001': f'{psi_1000:.3e} %',
+           'fig': fig,
+            'gif_buffer': gif_buffer,
+            'kk': f'{kk:.2f} N/m',
+            
 
         }
 
