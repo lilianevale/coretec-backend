@@ -48,7 +48,7 @@ def create_app():
     from .routes.mecSolidos import mecSolidos_bp
     from .routes.spi import spi_bp
     from .routes.idf import idf_bp
-    from .routes.marteloimpacto import martelo_bp
+    from .routes.marteloimpacto import marteloimpacto_bp
     from .routes.alvenaria_estrutural import alvenaria_bp
 
 
