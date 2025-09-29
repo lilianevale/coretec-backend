@@ -6,6 +6,140 @@ import base64
 import os
 import uuid
 
+def analise_inversa_martelo_impacto(m, c, f, k, dano):
+    """Essa função realiza a análise inversa de um sistema massa-mola-amortecedor a um martelo de impacto.
+
+    Args:
+        m (Float): Massa do sistema [kg]
+        c (Float): Coeficiente de amortecimento [N.s/m]
+        f (Float): Força do martelo [N.s]
+        k (Float): Coeficiente da rigidez [N/m]
+        dano (Float): Nível de dano da estrutura [0-1]
+
+    Returns:
+        fig (Figure): Figura com o gráfico da análise inversa
+    """
+
+    x_values = np.linspace(0, 5, 200, endpoint=True)
+    y_sem_dano = [martelo_impacto_resposta_tempo(f, c, k, m, t) for t in x_values]
+    y_com_dano = [martelo_impacto_resposta_tempo(f, c, k * (1 - dano), m, t) for t in x_values]
+
+    # Predição do modelo
+    k_novo = list(np.random.uniform(1500 * (1 - 0.60), 2000, 2000))
+    kk = 0
+    for i, k in enumerate(k_novo):
+        y_new = [martelo_impacto_resposta_tempo(f, c, k, m, t) for t in x_values]
+        r2 = calcular_r2(y_com_dano, y_new)
+        if i == 0:
+            kk = k
+            r2_final = r2
+            y = copy.deepcopy(y_new)
+        else:
+            if r2_final < calcular_r2(y_com_dano, y_new):
+                kk = k
+                r2_final = r2
+                y = copy.deepcopy(y_new)
+    
+    # Criando a figura e os eixos
+    fig, ax = plt.subplots()
+
+    # Plotando os dados
+    ax.plot(x_values, y_sem_dano, label='Experimento martelo estrutura s/ dano', linestyle='-', color='green')
+    ax.plot(x_values, y_com_dano, label='Experimento martelo estrutura c/ dano', linestyle='-', color='red')
+    ax.plot(x_values, y, label=f'Identificação rigidez \n k = {kk:.2f} com r² = {r2_final:.4e}', linestyle='--', color='blue')
+
+    # Personalizando o gráfico
+    ax.set_xlabel('$t$ ($s$)')
+    ax.set_ylabel('$x$ ($m$)')
+    ax.legend()
+    ax.grid(True)
+    plt.close
+
+    # fig.savefig('figura.png')
+    return fig, kk, y_com_dano
+
+
+def martelo_impacto_gif(y_com_dano, tempo=5, num_frames=200):
+    """Gera um GIF da animação de impacto do martelo para ser exibido no Streamlit.
+
+    Args:
+        y_com_dano (list): Lista com os valores de deslocamento
+        tempo (float): Tempo total da simulação [s]
+        num_frames (int): Número de frames no GIF
+
+    Returns:
+        io.BytesIO: Buffer contendo o GIF
+    """
+
+    def desenhar_imagem_original(ax):
+        """Desenha a imagem original (transparente no fundo)."""
+        retangulo = patches.Rectangle((-5, 4), 10, 1, edgecolor='blue', facecolor='blue', linewidth=2, alpha=0.5)
+        ax.add_patch(retangulo)
+        quadrado1 = patches.Rectangle((-6, 0), 2, 1, edgecolor='blue', facecolor='blue', linewidth=2, alpha=0.5)
+        quadrado2 = patches.Rectangle((4, 0), 2, 1, edgecolor='blue', facecolor='blue', linewidth=2, alpha=0.5)
+        ax.add_patch(quadrado1)
+        ax.add_patch(quadrado2)
+        ax.plot([-5, -5], [1, 4], color='blue', linewidth=2, alpha=0.5)
+        ax.plot([5, 5], [1, 4], color='blue', linewidth=2, alpha=0.5)
+
+    def desenhar_imagem_deslocada(ax, offset):
+        """Desenha a imagem deslocada (em outra cor, por cima)."""
+        retangulo = patches.Rectangle((-5 + offset, 4), 10, 1, edgecolor='red', facecolor='red', linewidth=2)
+        ax.add_patch(retangulo)
+        ax.plot([-5, -5 + offset], [1, 4], color='red', linewidth=2)
+        ax.plot([5, 5 + offset], [1, 4], color='red', linewidth=2)
+
+    def gerar_gif_buffer():
+        gif_buffer = io.BytesIO()
+        frames = []
+
+        # Definir o limite total baseado no deslocamento máximo
+        total_displacement = max(abs(max(y_com_dano, default=0)), abs(min(y_com_dano, default=0)))
+        
+        # Definir uma margem extra para garantir que o retângulo não saia da imagem
+        margin = 15
+
+        # Ajustar limites dos eixos com base no deslocamento máximo
+        x_lim = (-total_displacement - margin, total_displacement + margin)
+        y_lim = (0, 10)  # Ajuste se necessário para o eixo y
+        
+        for offset in y_com_dano:
+            fig, ax = plt.subplots()
+            desenhar_imagem_original(ax)
+            desenhar_imagem_deslocada(ax, offset)
+            ax.set_xlim(x_lim)
+            ax.set_ylim(y_lim)
+            ax.set_aspect('equal')
+            ax.get_yaxis().set_visible(False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.spines['bottom'].set_position('zero')
+            fig.canvas.draw()
+            img = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
+            img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+            pil_img = Image.fromarray(img)
+            frames.append(pil_img)
+            plt.close(fig)
+        
+        frames[0].save(gif_buffer, format='GIF', save_all=True, append_images=frames[1:], duration=100, loop=0)
+        gif_buffer.seek(0)
+        return gif_buffer
+
+    # Gerar e retornar o buffer do GIF
+    return gerar_gif_buffer()
+
+def save_figure_temp(fig):
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+    fig.savefig(temp_file.name)
+    temp_file.close()
+    return temp_file.name
+
+def save_gif_temp(gif_buffer):
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.gif')
+    temp_file.write(gif_buffer.getvalue())
+    temp_file.close()
+    return temp_file.name
 def indice_spi(df_inmet):
     """Determina o Índice de Preciptação Padronizado (SPI) para um determinado DataFrame.
     
