@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 from app.utils.calculos import perda_relax_armadura
 import pandas as pd
-from calculos import vazio, save_figure_temp, save_gif_temp, get_binary_downloader_html
-import analise_inversa_martelo_impacto, martelo_impacto_gif
+from calculos import  save_figure_temp, save_gif_temp, analise_inversa_martelo_impacto, martelo_impacto_gif
+
 
 marteloimpacto_bp = Blueprint('martelo', __name__)
 
@@ -37,6 +37,7 @@ def handle_martelo():
         caminho_completo = os.path.join(pasta_destino, nome_arquivo)
         fig.savefig(caminho_completo, dpi=300, bbox_inches='tight')
         plt.close(fig)
+        imagem_url2 = f"/static/imagens/{nome_arquivo}"
 
           gif_buffer = martelo_impacto_gif(y)
 
@@ -47,13 +48,12 @@ def handle_martelo():
         caminho_completo = os.path.join(pasta_destino, nome_arquivo)
         gif_buffer.savefig(caminho_completo, dpi=300, bbox_inches='tight')
         plt.close(gif_buffer)
+        imagem_url1 = f"/static/imagens/{nome_arquivo}"
 
         
-
-        imagem_url = f"/static/imagens/{nome_arquivo}"
         return jsonify({
-            'fig': fig,
-            'gif_buffer': gif_buffer,
+            'fig': imagem_url1,
+            'gif_buffer': imagem_url2,
             'kk': f'{kk:.2f} N/m',
             
         })
