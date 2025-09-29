@@ -27,15 +27,11 @@ def handle_martelo():
         # Chamada da função de cálculo
           fig, kk, y = analise_inversa_martelo_impacto(m, c, f, k, dano)
         pyplot(fig)
-
+          gif_buffer = martelo_impacto_gif(y)
         return jsonify({
             'fig': fig,
             'kk': f'{kk:.2f} N/m',
-            'p_it11': f'{p_it1:.3e} kN',
-            'psi1': f'{psi:.3e} %',
-            'psi_10001': f'{psi_1000:.3e} %'
-
-
+            
         })
 
     elif request.method == 'GET':
