@@ -43,6 +43,15 @@ def create_app():
     from .routes.estadio2 import estadio2_bp
     from .routes.armadura import armadura_bp
     from .routes.fluencia import fluencia_bp
+    from .routes.sapatas import sapatas_bp
+    from .routes.sapatasotimizado import sapatasotimizado_bp
+    from .routes.mecSolidos import mecSolidos_bp
+    from .routes.spi import spi_bp
+    from .routes.idf import idf_bp
+    from .routes.marteloimpacto import martelo_bp
+    
+
+
     from .routes.gerador_questoes import gerador_questoes_bp
     from .routes.auth import auth_bp
 
