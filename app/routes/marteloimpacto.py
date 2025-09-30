@@ -1,13 +1,13 @@
 from flask import Blueprint, request, jsonify
 from app.utils.calculos import perda_relax_armadura
 import pandas as pd
-from calculos import  save_figure_temp, save_gif_temp, analise_inversa_martelo_impacto, martelo_impacto_gif
+from app.utils.calculos import analise_inversa_martelo_impacto, martelo_impacto_gif
 
 
 marteloimpacto_bp = Blueprint('martelo', __name__)
 
 # Variáveis globais como no seu código original
-gif_buffer, fig, kk, y=None, None,0,0 
+gif_buffer, fig, kk, y = None, None, 0, 0
 response_data = {}
 
 
@@ -25,12 +25,12 @@ def handle_martelo():
         f = float(data.get('forca1'))
         k = float(data.get('valor'))
         dano = float(data.get('dano1'))
-        
+
         # Chamada da função de cálculo
-          fig, kk, y = analise_inversa_martelo_impacto(m, c, f, k, dano)
+        fig, kk, y = analise_inversa_martelo_impacto(m, c, f, k, dano)
         pyplot(fig)
 
-         # Salvar fig na pasta do projeto
+        # Salvar fig na pasta do projeto
         nome_arquivo = f"vao_{uuid.uuid4().hex[:8]}.png"
         pasta_destino = os.path.join("app", "static", "imagens")
         os.makedirs(pasta_destino, exist_ok=True)
@@ -39,7 +39,7 @@ def handle_martelo():
         plt.close(fig)
         imagem_url2 = f"/static/imagens/{nome_arquivo}"
 
-          gif_buffer = martelo_impacto_gif(y)
+        gif_buffer = martelo_impacto_gif(y)
 
         # Salvar gif_buffer na pasta do projeto
         nome_arquivo = f"vao_{uuid.uuid4().hex[:8]}.png"
@@ -50,20 +50,19 @@ def handle_martelo():
         plt.close(gif_buffer)
         imagem_url1 = f"/static/imagens/{nome_arquivo}"
 
-        
         return jsonify({
             'fig': imagem_url1,
             'gif_buffer': imagem_url2,
             'kk': f'{kk:.2f} N/m',
-            
+
         })
 
     elif request.method == 'GET':
         response_data = {
-           'fig': fig,
+            'fig': fig,
             'gif_buffer': gif_buffer,
             'kk': f'{kk:.2f} N/m',
-            
+
 
         }
 

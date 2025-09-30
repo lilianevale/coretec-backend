@@ -66,7 +66,6 @@ def create_app():
     app.register_blueprint(tensao_bp)
     app.register_blueprint(armadura_bp)
     app.register_blueprint(fluencia_bp)
-    app.register_blueprint(fsarmado_bp)
     app.register_blueprint(alvenaria_bp)
     app.register_blueprint(marteloimpacto_bp)
     app.register_blueprint(idf_bp)

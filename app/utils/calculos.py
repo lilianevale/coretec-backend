@@ -6,7 +6,8 @@ import base64
 import os
 import uuid
 
-def shaker(m, b, h, l, omega, modulo_e, t, f_0, x0=0, dx0=0):   
+
+def shaker(m, b, h, l, omega, modulo_e, t, f_0, x0=0, dx0=0):
     """ Essa função calcula a resposta de uma viga submetida a um shaker.
 
     Args:
@@ -20,7 +21,7 @@ def shaker(m, b, h, l, omega, modulo_e, t, f_0, x0=0, dx0=0):
         f_0 (Float): Força do shaker [N]
         x0 (Float): Deslocamento inicial [m]
         dx0 (Float): Velocidade inicial [m/s]
-    
+
     Returns:
         x (Float): Deslocamento vertical da viga [m]
     """
@@ -57,7 +58,8 @@ def analise_inversa_shaker(m, b, h, l, omega, modulo_e, f_0, dano):
 
     # Modelo com dano suposto. Ensaio experimental
     x_values = np.linspace(0, 5, 200, endpoint=True)
-    y_com_dano = [shaker(m, b, h, l, omega, modulo_e * (1 - dano), t, f_0) for t in x_values]
+    y_com_dano = [shaker(m, b, h, l, omega, modulo_e *
+                         (1 - dano), t, f_0) for t in x_values]
 
     # Predição do modelo
     modulo_e_novo = list(np.random.uniform(30000 * (1 - 0.6), 40000, 2000))
@@ -74,12 +76,14 @@ def analise_inversa_shaker(m, b, h, l, omega, modulo_e, f_0, dano):
                 kk = k
                 r2_final = r2
                 y = copy.deepcopy(y_new)
-                
+
     # Criando a figura e os eixos
     fig, ax = plt.subplots()
-    
-    ax.plot(x_values, y_com_dano, label='Experimento estrutura c/ dano', linestyle='-', color='red')
-    ax.plot(x_values, y, label=f'Identificação módulo E \n  = {kk:.2f} com r² = {r2_final:.4e}', linestyle='--', color='blue')
+
+    ax.plot(x_values, y_com_dano, label='Experimento estrutura c/ dano',
+            linestyle='-', color='red')
+    ax.plot(x_values, y,
+            label=f'Identificação módulo E \n  = {kk:.2f} com r² = {r2_final:.4e}', linestyle='--', color='blue')
 
     # Personalizando o gráfico
     ax.set_xlabel('$t$ ($s$)')
@@ -91,45 +95,48 @@ def analise_inversa_shaker(m, b, h, l, omega, modulo_e, f_0, dano):
     # fig.savefig('figura.png')
     return fig, kk, y_com_dano
 
+
 def martelo_impacto_resposta_tempo(f, c, k, m, t):
     """Essa função calcula a resposta de um sistema massa-mola-amortecedor a um martelo de impacto.
-    
+
     Args:
         f (Float): Força do martelo [N.s]
         c (Float): Coeficiente de amortecimento [N.s/m]
         k (Float): Coeficiente da rigidez [N/m]
         m (Float): Massa do sistema [kg]
         t (Float): Tempo [s]
-    
+
     Returns:
         x (Float): Deslocamento do sistema [m]
         w_n (Float): Frequência natural do sistema [rad/s]
     """
-    
+
     w_n = np.sqrt(k / m)
-    zeta = c / (2 * m *w_n)
+    zeta = c / (2 * m * w_n)
     w_d = w_n * np.sqrt(1 - zeta ** 2)
     x = f * (np.exp(-zeta * w_n * t) / m * w_d) * np.sin(w_d * t)
-    
+
     return x
-    
+
+
 def calcular_r2(y_real, y_predito):
     """Essa função calcula o coeficiente de determinação R² de um modelo de regressão.
-    
+
     Args:
         y_real (List): Lista com os valores reais
         y_predito (List): Lista com os valores preditos pelo modelo
-    
+
     Returns:
         r2 (Float): Coeficiente de determinação R²
     """
-    
+
     y_real = np.array(y_real)
     y_predito = np.array(y_predito)
     ss_res = np.sum((y_real - y_predito) ** 2)
     ss_tot = np.sum((y_real - np.mean(y_real)) ** 2)
 
     return 1 - (ss_res / ss_tot)
+
 
 def analise_inversa_martelo_impacto(m, c, f, k, dano):
     """Essa função realiza a análise inversa de um sistema massa-mola-amortecedor a um martelo de impacto.
@@ -146,14 +153,17 @@ def analise_inversa_martelo_impacto(m, c, f, k, dano):
     """
 
     x_values = np.linspace(0, 5, 200, endpoint=True)
-    y_sem_dano = [martelo_impacto_resposta_tempo(f, c, k, m, t) for t in x_values]
-    y_com_dano = [martelo_impacto_resposta_tempo(f, c, k * (1 - dano), m, t) for t in x_values]
+    y_sem_dano = [martelo_impacto_resposta_tempo(
+        f, c, k, m, t) for t in x_values]
+    y_com_dano = [martelo_impacto_resposta_tempo(
+        f, c, k * (1 - dano), m, t) for t in x_values]
 
     # Predição do modelo
     k_novo = list(np.random.uniform(1500 * (1 - 0.60), 2000, 2000))
     kk = 0
     for i, k in enumerate(k_novo):
-        y_new = [martelo_impacto_resposta_tempo(f, c, k, m, t) for t in x_values]
+        y_new = [martelo_impacto_resposta_tempo(
+            f, c, k, m, t) for t in x_values]
         r2 = calcular_r2(y_com_dano, y_new)
         if i == 0:
             kk = k
@@ -164,14 +174,17 @@ def analise_inversa_martelo_impacto(m, c, f, k, dano):
                 kk = k
                 r2_final = r2
                 y = copy.deepcopy(y_new)
-    
+
     # Criando a figura e os eixos
     fig, ax = plt.subplots()
 
     # Plotando os dados
-    ax.plot(x_values, y_sem_dano, label='Experimento martelo estrutura s/ dano', linestyle='-', color='green')
-    ax.plot(x_values, y_com_dano, label='Experimento martelo estrutura c/ dano', linestyle='-', color='red')
-    ax.plot(x_values, y, label=f'Identificação rigidez \n k = {kk:.2f} com r² = {r2_final:.4e}', linestyle='--', color='blue')
+    ax.plot(x_values, y_sem_dano, label='Experimento martelo estrutura s/ dano',
+            linestyle='-', color='green')
+    ax.plot(x_values, y_com_dano, label='Experimento martelo estrutura c/ dano',
+            linestyle='-', color='red')
+    ax.plot(x_values, y,
+            label=f'Identificação rigidez \n k = {kk:.2f} com r² = {r2_final:.4e}', linestyle='--', color='blue')
 
     # Personalizando o gráfico
     ax.set_xlabel('$t$ ($s$)')
@@ -198,10 +211,13 @@ def martelo_impacto_gif(y_com_dano, tempo=5, num_frames=200):
 
     def desenhar_imagem_original(ax):
         """Desenha a imagem original (transparente no fundo)."""
-        retangulo = patches.Rectangle((-5, 4), 10, 1, edgecolor='blue', facecolor='blue', linewidth=2, alpha=0.5)
+        retangulo = patches.Rectangle(
+            (-5, 4), 10, 1, edgecolor='blue', facecolor='blue', linewidth=2, alpha=0.5)
         ax.add_patch(retangulo)
-        quadrado1 = patches.Rectangle((-6, 0), 2, 1, edgecolor='blue', facecolor='blue', linewidth=2, alpha=0.5)
-        quadrado2 = patches.Rectangle((4, 0), 2, 1, edgecolor='blue', facecolor='blue', linewidth=2, alpha=0.5)
+        quadrado1 = patches.Rectangle(
+            (-6, 0), 2, 1, edgecolor='blue', facecolor='blue', linewidth=2, alpha=0.5)
+        quadrado2 = patches.Rectangle(
+            (4, 0), 2, 1, edgecolor='blue', facecolor='blue', linewidth=2, alpha=0.5)
         ax.add_patch(quadrado1)
         ax.add_patch(quadrado2)
         ax.plot([-5, -5], [1, 4], color='blue', linewidth=2, alpha=0.5)
@@ -209,7 +225,8 @@ def martelo_impacto_gif(y_com_dano, tempo=5, num_frames=200):
 
     def desenhar_imagem_deslocada(ax, offset):
         """Desenha a imagem deslocada (em outra cor, por cima)."""
-        retangulo = patches.Rectangle((-5 + offset, 4), 10, 1, edgecolor='red', facecolor='red', linewidth=2)
+        retangulo = patches.Rectangle(
+            (-5 + offset, 4), 10, 1, edgecolor='red', facecolor='red', linewidth=2)
         ax.add_patch(retangulo)
         ax.plot([-5, -5 + offset], [1, 4], color='red', linewidth=2)
         ax.plot([5, 5 + offset], [1, 4], color='red', linewidth=2)
@@ -219,15 +236,16 @@ def martelo_impacto_gif(y_com_dano, tempo=5, num_frames=200):
         frames = []
 
         # Definir o limite total baseado no deslocamento máximo
-        total_displacement = max(abs(max(y_com_dano, default=0)), abs(min(y_com_dano, default=0)))
-        
+        total_displacement = max(
+            abs(max(y_com_dano, default=0)), abs(min(y_com_dano, default=0)))
+
         # Definir uma margem extra para garantir que o retângulo não saia da imagem
         margin = 15
 
         # Ajustar limites dos eixos com base no deslocamento máximo
         x_lim = (-total_displacement - margin, total_displacement + margin)
         y_lim = (0, 10)  # Ajuste se necessário para o eixo y
-        
+
         for offset in y_com_dano:
             fig, ax = plt.subplots()
             desenhar_imagem_original(ax)
@@ -246,13 +264,15 @@ def martelo_impacto_gif(y_com_dano, tempo=5, num_frames=200):
             pil_img = Image.fromarray(img)
             frames.append(pil_img)
             plt.close(fig)
-        
-        frames[0].save(gif_buffer, format='GIF', save_all=True, append_images=frames[1:], duration=100, loop=0)
+
+        frames[0].save(gif_buffer, format='GIF', save_all=True,
+                       append_images=frames[1:], duration=100, loop=0)
         gif_buffer.seek(0)
         return gif_buffer
 
     # Gerar e retornar o buffer do GIF
     return gerar_gif_buffer()
+
 
 def save_figure_temp(fig):
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
@@ -260,17 +280,20 @@ def save_figure_temp(fig):
     temp_file.close()
     return temp_file.name
 
+
 def save_gif_temp(gif_buffer):
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.gif')
     temp_file.write(gif_buffer.getvalue())
     temp_file.close()
     return temp_file.name
+
+
 def indice_spi(df_inmet):
     """Determina o Índice de Preciptação Padronizado (SPI) para um determinado DataFrame.
-    
+
     Args:
         df (DataFrame): DataFrame com os dados de preciptação
-    
+
     Returns:
         spi_df (DataFrame): DataFrame com os valores do SPI
     """
@@ -279,66 +302,72 @@ def indice_spi(df_inmet):
     df = df_inmet
     df_precip = df.drop(columns=['Unnamed: 2'])
     df_precip.columns = ['Data Medição', 'Precipitação Total Diária (mm)']
-    df_precip['Precipitação Total Diária (mm)'] = df_precip['Precipitação Total Diária (mm)'].str.replace(',', '.').astype(float)
-    df_precip['Data Medição'] = pd.to_datetime(df_precip['Data Medição'], format='%Y-%m-%d')
-    df_precip['Precipitação Total Diária (mm)'] = pd.to_numeric(df_precip['Precipitação Total Diária (mm)'], errors='coerce')
+    df_precip['Precipitação Total Diária (mm)'] = df_precip['Precipitação Total Diária (mm)'].str.replace(
+        ',', '.').astype(float)
+    df_precip['Data Medição'] = pd.to_datetime(
+        df_precip['Data Medição'], format='%Y-%m-%d')
+    df_precip['Precipitação Total Diária (mm)'] = pd.to_numeric(
+        df_precip['Precipitação Total Diária (mm)'], errors='coerce')
 
     # Agrupar por mês e somar a precipitação diária para obter precipitação mensal
-    df_precip['AnoMes'] = df_precip['Data Medição'].dt.to_period('M')  # Criar uma coluna com o ano e mês
-    precip_mensal = df_precip.groupby('AnoMes')['Precipitação Total Diária (mm)'].sum()  # Soma a precipitação diária para obter mensal
+    df_precip['AnoMes'] = df_precip['Data Medição'].dt.to_period(
+        'M')  # Criar uma coluna com o ano e mês
+    # Soma a precipitação diária para obter mensal
+    precip_mensal = df_precip.groupby(
+        'AnoMes')['Precipitação Total Diária (mm)'].sum()
 
     # Função para calcular o SPI considerando precipitação zero
-   
+
     def calcular_spi(precipitacao_mensal):
-        
+
         spi_mensal = []
-        estatisticas = [] 
+        estatisticas = []
 
         # Iterar sobre os 12 meses do ano
         for mes in range(1, 13):
             # Filtrar os dados referentes a cada mês
             dados_mes = precipitacao_mensal[precipitacao_mensal.index.month == mes]
-          
+
             # Calcular a média mensal
             media = np.mean(dados_mes)
 
             # Separar os valores de precipitação zero e positivos
             zeros = (dados_mes == 0).sum()
             positivos = dados_mes[dados_mes > 0]
-            
+
             # Probabilidade de zeros
             prob_zeros = zeros / len(dados_mes)
-            
+
             # Ajustar a distribuição gama aos valores positivos
             shape, loc, scale = gamma.fit(positivos, floc=0)
             cdf = gamma.cdf(dados_mes, shape, loc=loc, scale=scale)
-            
+
             # Ajustar a CDF para lidar com zeros
             cdf_adjusted = prob_zeros + (1 - prob_zeros) * cdf
-            
+
             # Convertendo a CDF ajustada para a distribuição normal padrão (SPI)
             spi_mes = norm.ppf(cdf_adjusted)
-            
+
             # Armazenar os valores de SPI para o mês atual
             spi_mensal.extend(spi_mes)
-        
+
             # Armazenar as estatísticas do mês
             estatisticas.append({
-                        'Mês': mes,
-                        'Média Mensal': media,
-                        'q (zeros)': prob_zeros,
-                        'Alpha (shape)': shape,
-                        'Beta (scale)': scale
+                'Mês': mes,
+                'Média Mensal': media,
+                'q (zeros)': prob_zeros,
+                'Alpha (shape)': shape,
+                'Beta (scale)': scale
             })
 
-
         return spi_mensal, estatisticas
-    
+
     # Calcular o SPI mensal e estatísticas por mês do ano
     spi_mensal, estatisticas = calcular_spi(precip_mensal)
 
     # Criar um DataFrame com os resultados
-    spi_df = pd.DataFrame({'AnoMes': precip_mensal.index, 'PrecipitaçãoMensal': precip_mensal.values, 'SPI': spi_mensal})
+    spi_df = pd.DataFrame({'AnoMes': precip_mensal.index,
+                          'PrecipitaçãoMensal': precip_mensal.values, 'SPI': spi_mensal})
     estatisticas_df = pd.DataFrame(estatisticas)
 
     # Exibir a tabela com o SPI calculado
@@ -346,12 +375,14 @@ def indice_spi(df_inmet):
     print(estatisticas_df)
 
     return spi_df, estatisticas_df
+
+
 def calculo_precipitacoes(df_inmet):
     """Determina as preciptações e intensidades máximas em função de diversos tempos de retorno e tempos de duraçao.
-    
+
     Args:
         df_inmet (DataFrame): DataFrame com os dados de preciptação retirados do INMET
-        
+
     Returns:
         h_max1aux (DataFrame): Valores de preciptação diária (mm) para os tempos de retorno selecionados (ano)
         preciptacao (DataFrame): Preciptação máxima para os tempos de retorno e tempos de duração selecionados
@@ -363,41 +394,49 @@ def calculo_precipitacoes(df_inmet):
     # Detectar o nome correto da coluna e renomear
     df = df_inmet
     if 'PRECIPITACAO TOTAL, DIARIO (AUT)(mm)' in df.columns:
-        df.rename(columns={'PRECIPITACAO TOTAL, DIARIO (AUT)(mm)': 'PRECIPITACAO TOTAL DIARIA (mm)'}, inplace=True)
+        df.rename(columns={
+                  'PRECIPITACAO TOTAL, DIARIO (AUT)(mm)': 'PRECIPITACAO TOTAL DIARIA (mm)'}, inplace=True)
     elif 'PRECIPITACAO TOTAL, DIARIO(mm)' in df.columns:
-        df.rename(columns={'PRECIPITACAO TOTAL, DIARIO(mm)': 'PRECIPITACAO TOTAL DIARIA (mm)'}, inplace=True)
+        df.rename(columns={
+                  'PRECIPITACAO TOTAL, DIARIO(mm)': 'PRECIPITACAO TOTAL DIARIA (mm)'}, inplace=True)
     else:
         nomes_esperados = ['PRECIPITACAO TOTAL DIARIA (mm)']
         colunas_atuais = df.columns.tolist()
         # Verifica possíveis correspondências incorretas
-        colunas_erradas = [col for col in colunas_atuais if 'PRECIPITACAO' in col]
+        colunas_erradas = [
+            col for col in colunas_atuais if 'PRECIPITACAO' in col]
         st.error("A coluna de precipitação não foi encontrada.")
         st.write("Colunas com possíveis erros:")
         st.table(colunas_erradas)
-        st.write(f"O nome correto esperado é: <span style='color:green'>{nomes_esperados[0]}</span>", unsafe_allow_html=True)
+        st.write(
+            f"O nome correto esperado é: <span style='color:green'>{nomes_esperados[0]}</span>", unsafe_allow_html=True)
         st.write("Colunas disponíveis no DataFrame:")
         st.table(colunas_atuais)
         st.stop()
-    
+
     df['Data Medicao'] = pd.to_datetime(df['Data Medicao'])
     df['ano hidrológico'] = df['Data Medicao'].dt.year
-    df['PRECIPITACAO TOTAL DIARIA (mm)'] = pd.to_numeric(df['PRECIPITACAO TOTAL DIARIA (mm)'], errors='coerce')
+    df['PRECIPITACAO TOTAL DIARIA (mm)'] = pd.to_numeric(
+        df['PRECIPITACAO TOTAL DIARIA (mm)'], errors='coerce')
     df.dropna(subset=['PRECIPITACAO TOTAL DIARIA (mm)'], inplace=True)
 
     # Preciptação máxima por ano e estatística descritiva dos dados
-    maiores_precipitacoes_por_ano = df.groupby('ano hidrológico')['PRECIPITACAO TOTAL DIARIA (mm)'].max()
+    maiores_precipitacoes_por_ano = df.groupby(
+        'ano hidrológico')['PRECIPITACAO TOTAL DIARIA (mm)'].max()
     media = maiores_precipitacoes_por_ano.mean()
-    desvio_padrao = maiores_precipitacoes_por_ano.std() 
+    desvio_padrao = maiores_precipitacoes_por_ano.std()
     tempo_retorno = [2, 5, 10, 15, 20, 25, 50, 100, 250, 500, 1000]
     h_max1 = [calcular_hmax(media, desvio_padrao, tr) for tr in tempo_retorno]
-    h_max1aux = pd.DataFrame({'tempo de retorno (anos)': tempo_retorno, 'Pmax diária (mm)': h_max1})
+    h_max1aux = pd.DataFrame(
+        {'tempo de retorno (anos)': tempo_retorno, 'Pmax diária (mm)': h_max1})
 
     # Desagregação da preciptação e intensidade
     preciptacao = desagragacao_preciptacao(h_max1)
     intensidade = conversao_intensidade(preciptacao)
 
     # Geração tabela IDF
-    df_longo = intensidade.melt(id_vars='td (min)', var_name='tr', value_name='y_obs (mm/h)')
+    df_longo = intensidade.melt(
+        id_vars='td (min)', var_name='tr', value_name='y_obs (mm/h)')
     df_longo['tr'] = df_longo['tr'].astype(float)
 
     return h_max1aux, preciptacao, intensidade, df_longo, media, desvio_padrao
@@ -405,10 +444,10 @@ def calculo_precipitacoes(df_inmet):
 
 def problema_inverso_idf(df_long):
     """Está função determina os parâmetros da equação IDF a partir dos dados de intensidade de preciptação máxima diária.
-    
+
     Args:
         df_long (DataFrame): DataFrame com os valores de intensidade de preciptação máxima diária para os tempos de retorno selecionados (mm/h)
-        
+
     Returns:
         a_opt (Float): Parâmetro a da equação IDF
         b_opt (Float): Parâmetro b da equação IDF
@@ -417,9 +456,9 @@ def problema_inverso_idf(df_long):
     """
 
     # Dados para confecção do IDF
-    t_r = df_long['tr'].values 
-    t_c = df_long['td (min)'].values  
-    y_obs = df_long['y_obs (mm/h)'].values 
+    t_r = df_long['tr'].values
+    t_c = df_long['td (min)'].values
+    y_obs = df_long['y_obs (mm/h)'].values
 
     # Equação de predição do IDF
  # Equação de predição do IDF
@@ -436,15 +475,17 @@ def problema_inverso_idf(df_long):
     # Problema inverso
     initial_guess = [0, 0, 0, 0]
     bounds = [(1e-5, None), (1e-5, None), (1e-5, None), (1e-5, None)]
-    result = minimize(error_function, initial_guess, args=(t_r, t_c, y_obs), bounds=bounds)
+    result = minimize(error_function, initial_guess,
+                      args=(t_r, t_c, y_obs), bounds=bounds)
     a_opt, b_opt, c_opt, d_opt = result.x
 
     return a_opt, b_opt, c_opt, d_opt
 
+
 def projeto_paredes_compressao(dados_parede_aux, gamma_f, gamma_w, f_pk, g, q, g_wall, n_pavtos, x_total, y_total, tipo_argamassa):
     """
     Verificação de projeto de paredes à compressão.
-    
+
     Args:
         dados_parede_aux (pd.DataFrame): dataframe contendo os dados das paredes
         gamma_f (float): coeficiente de ponderação das ações permanentes
@@ -457,7 +498,7 @@ def projeto_paredes_compressao(dados_parede_aux, gamma_f, gamma_w, f_pk, g, q, g
         x_total (float): comprimento total da estrutura
         y_total (float): largura total da estrutura
         tipo_argamassa (str): tipo de argamassa
-        
+
         Returns:
         n_rd (list): lista contendo as resistências de cada parede
         n_sd (list): lista contendo as ações de cada parede
@@ -468,44 +509,59 @@ def projeto_paredes_compressao(dados_parede_aux, gamma_f, gamma_w, f_pk, g, q, g
     # Dados geométricos do modelo
     dados_parede = dados_parede_aux.copy()
     dados_parede['carga g laje (kN)'] = x_total * y_total * g
-    dados_parede['carga q laje (kN)'] = x_total * y_total * q 
+    dados_parede['carga q laje (kN)'] = x_total * y_total * q
     dados_parede['area (m2)'] = dados_parede['l (m)'] * dados_parede['t (m)']
-    dados_parede['area . x_g (m3)'] = dados_parede['area (m2)'] * dados_parede['x_g (m)']
-    dados_parede['area . y_g (m3)'] = dados_parede['area (m2)'] * dados_parede['y_g (m)']
-    x_g_global = dados_parede['area . x_g (m3)'].sum() / dados_parede['area (m2)'].sum()
-    y_g_global = dados_parede['area . y_g (m3)'].sum() / dados_parede['area (m2)'].sum()
+    dados_parede['area . x_g (m3)'] = dados_parede['area (m2)'] * \
+        dados_parede['x_g (m)']
+    dados_parede['area . y_g (m3)'] = dados_parede['area (m2)'] * \
+        dados_parede['y_g (m)']
+    x_g_global = dados_parede['area . x_g (m3)'].sum(
+    ) / dados_parede['area (m2)'].sum()
+    y_g_global = dados_parede['area . y_g (m3)'].sum(
+    ) / dados_parede['area (m2)'].sum()
     dados_parede['x_1g (m)'] = dados_parede['x_g (m)'] - x_g_global
     dados_parede['y_1g (m)'] = dados_parede['y_g (m)'] - y_g_global
-    dados_parede['area . x_g . x_g (m4)'] = dados_parede['area (m2)'] * dados_parede['x_1g (m)'] ** 2
-    dados_parede['area . y_g . y_g (m4)'] = dados_parede['area (m2)'] * dados_parede['y_1g (m)'] ** 2
+    dados_parede['area . x_g . x_g (m4)'] = dados_parede['area (m2)'] * \
+        dados_parede['x_1g (m)'] ** 2
+    dados_parede['area . y_g . y_g (m4)'] = dados_parede['area (m2)'] * \
+        dados_parede['y_1g (m)'] ** 2
     e_x = x_total / 2 - x_g_global
     e_y = y_total / 2 - y_g_global
     ai_soma = dados_parede['area (m2)'].sum()
-    aix_soma = dados_parede['area . x_g . x_g (m4)'].sum() 
+    aix_soma = dados_parede['area . x_g . x_g (m4)'].sum()
     aiy_soma = dados_parede['area . y_g . y_g (m4)'].sum()
-    
+
     # Cálculo do carregamento de cada parede
-    dados_parede['parcela quinhão (valor/100)'] = dados_parede.apply(quinhao_de_carga, axis = 1, args = (ai_soma, aix_soma, aiy_soma, e_x, e_y))
-    dados_parede['parcela_gi (kN)'] = dados_parede['carga g laje (kN)'] * dados_parede['parcela quinhão (valor/100)']
-    dados_parede['parcela_gi_pp (kN)'] = g_wall * dados_parede['h (m)'] * dados_parede['l (m)']
-    dados_parede['parcela_gi_total (kN)'] = dados_parede['parcela_gi (kN)'] + dados_parede['parcela_gi_pp (kN)']
-    dados_parede['parcela_qi (kN)'] = dados_parede['carga q laje (kN)'] * dados_parede['parcela quinhão (valor/100)']
-    dados_parede['n_sd (kN)'] = (dados_parede['parcela_qi (kN)'] + dados_parede['parcela_gi_total (kN)']) * gamma_f * n_pavtos
+    dados_parede['parcela quinhão (valor/100)'] = dados_parede.apply(
+        quinhao_de_carga, axis=1, args=(ai_soma, aix_soma, aiy_soma, e_x, e_y))
+    dados_parede['parcela_gi (kN)'] = dados_parede['carga g laje (kN)'] * \
+        dados_parede['parcela quinhão (valor/100)']
+    dados_parede['parcela_gi_pp (kN)'] = g_wall * \
+        dados_parede['h (m)'] * dados_parede['l (m)']
+    dados_parede['parcela_gi_total (kN)'] = dados_parede['parcela_gi (kN)'] + \
+        dados_parede['parcela_gi_pp (kN)']
+    dados_parede['parcela_qi (kN)'] = dados_parede['carga q laje (kN)'] * \
+        dados_parede['parcela quinhão (valor/100)']
+    dados_parede['n_sd (kN)'] = (dados_parede['parcela_qi (kN)'] +
+                                 dados_parede['parcela_gi_total (kN)']) * gamma_f * n_pavtos
 
     # Cálculo da resistência de cada parede
     dados_parede['lambda'] = dados_parede['h (m)'] / dados_parede['t (m)']
-    dados_parede['redutor R de resistência'] = 1 - (dados_parede['lambda'] / 40) ** 3
+    dados_parede['redutor R de resistência'] = 1 - \
+        (dados_parede['lambda'] / 40) ** 3
     if tipo_argamassa == 'total' or tipo_argamassa == 'argamassa de bloco inteiro':
         alpha_arg = 1.00
     else:
         alpha_arg = 0.80
     f_pd = 0.70 * (f_pk / gamma_w) * alpha_arg
-    dados_parede['n_rd (kN)'] = dados_parede['area (m2)'] * f_pd * dados_parede['redutor R de resistência']
-    dados_parede['g (kN)'] = dados_parede['n_sd (kN)'] - dados_parede['n_rd (kN)']
+    dados_parede['n_rd (kN)'] = dados_parede['area (m2)'] * \
+        f_pd * dados_parede['redutor R de resistência']
+    dados_parede['g (kN)'] = dados_parede['n_sd (kN)'] - \
+        dados_parede['n_rd (kN)']
     n_rd = dados_parede['n_rd (kN)'].tolist()
     n_sd = dados_parede['n_sd (kN)'].tolist()
     g_0 = dados_parede['g (kN)'].tolist()
-    
+
     return n_rd, n_sd, g_0, dados_parede
 
 
@@ -521,7 +577,8 @@ def download_excel(df, nome_df):
 
             with open(tmp.name, 'rb') as f:
                 excel_file_content = f.read()
-                
+
+
 def plot_data(data):
     """
     Plota um gráfico com quadrados azuis em torno dos pontos e anotações a partir dos dados fornecidos.
@@ -531,7 +588,7 @@ def plot_data(data):
     data (dict): Um dicionário com chaves 'label', 'x', 'y', 'L x', e 'L y'.
                  'label' deve ser uma lista de rótulos, 'x' e 'y' devem ser listas de coordenadas.
                  'L x' e 'L y' definem as dimensões dos quadrados ao redor dos pontos.
-                 
+
     Retorna:
     plt.Figure: A figura gerada.
     """
@@ -555,7 +612,8 @@ def plot_data(data):
         ax.scatter(x[i], y[i], color='red', marker='+', s=100)
 
         # Adiciona a anotação
-        ax.annotate(labels[i], (x[i], y[i]), textcoords="offset points", xytext=(0, 10), ha='center')
+        ax.annotate(labels[i], (x[i], y[i]),
+                    textcoords="offset points", xytext=(0, 10), ha='center')
 
     # Configurando o gráfico
     ax.set_xlabel('X')
@@ -566,9 +624,11 @@ def plot_data(data):
     # Retorna a figura
     return fig
 
+
 def run_python_script():
     # Usando sys.executable para garantir que o mesmo Python do ambiente Streamlit seja usado
-    result = subprocess.run([sys.executable, './paginas/otimizador/hill_climbing.py'], capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, './paginas/otimizador/hill_climbing.py'], capture_output=True, text=True)
 
     if result.returncode == 0:
         st.write("Resultado do script:")
@@ -576,7 +636,7 @@ def run_python_script():
     else:
         st.write("Erro ao executar o script:")
         st.text(result.stderr)  # Exibe o erro, caso haja
-    
+
 
 def prop_geometrica_estadio_ii(H_F, B_F, B_W, A_ST, A_SC, ALPHA_MOD, D, D_L, PRINT=False):
     """
@@ -597,14 +657,15 @@ def prop_geometrica_estadio_ii(H_F, B_F, B_W, A_ST, A_SC, ALPHA_MOD, D, D_L, PRI
     X_II       | Centro geometrico da viga no estádio 2                  | m    | float
     I_II       | Inércia da viga no estádio 2                            | m^4  | float
     """
-    
+
     # Checagem do primeiro teste de linha neutra. Hipótese de B_W = B_F
     A_1 = B_F / 2
-    H_FAUX = H_F * 0 
+    H_FAUX = H_F * 0
     A_2 = H_FAUX * (B_F - B_W) + (ALPHA_MOD - 1) * A_SC + ALPHA_MOD * A_ST
-    A_3 = - D_L * (ALPHA_MOD - 1) * A_SC - D * ALPHA_MOD * A_ST - (H_FAUX ** 2 / 2) * (B_F - B_W)
+    A_3 = - D_L * (ALPHA_MOD - 1) * A_SC - D * ALPHA_MOD * \
+        A_ST - (H_FAUX ** 2 / 2) * (B_F - B_W)
     X_IITESTE = (- A_2 + (A_2 ** 2 - 4 * A_1 * A_3) ** 0.50) / (2 * A_1)
-    
+
     # Cálculo da linha neutra em função do teste de 1º chute
     if X_IITESTE <= H_F:
         # L.N. passando pela mesa
@@ -614,18 +675,21 @@ def prop_geometrica_estadio_ii(H_F, B_F, B_W, A_ST, A_SC, ALPHA_MOD, D, D_L, PRI
         # L.N. passando pela alma
         A_1 = B_W / 2
         A_2 = H_F * (B_F - B_W) + (ALPHA_MOD - 1) * A_SC + ALPHA_MOD * A_ST
-        A_3 = - D_L * (ALPHA_MOD - 1) * A_SC - D * ALPHA_MOD * A_ST - (H_F ** 2 / 2) * (B_F - B_W)
+        A_3 = - D_L * (ALPHA_MOD - 1) * A_SC - D * ALPHA_MOD * \
+            A_ST - (H_F ** 2 / 2) * (B_F - B_W)
         X_II = (- A_2 + (A_2 ** 2 - 4 * A_1 * A_3) ** 0.50) / (2 * A_1)
         PASSA_ONDE = "alma"
-    
+
     # Inércia estádio II
     if X_II <= H_F:
         # L.N. passando pela mesa
-        I_II = (B_F * X_II ** 3) / 3 + ALPHA_MOD * A_ST * (X_II - D) ** 2 + (ALPHA_MOD - 1) * A_SC * (X_II - D_L) ** 2
+        I_II = (B_F * X_II ** 3) / 3 + ALPHA_MOD * A_ST * \
+            (X_II - D) ** 2 + (ALPHA_MOD - 1) * A_SC * (X_II - D_L) ** 2
     else:
         # L.N. passando pela alma
-        I_II = ((B_F - B_W) * H_F ** 3) / 12 + (B_W * X_II ** 3) / 3 + (B_F - B_W) * (X_II - H_F * 0.50) ** 2 + ALPHA_MOD * A_ST * (X_II - D) ** 2 + (ALPHA_MOD - 1) * A_SC * (X_II - D_L) ** 2
-   
+        I_II = ((B_F - B_W) * H_F ** 3) / 12 + (B_W * X_II ** 3) / 3 + (B_F - B_W) * (X_II - H_F *
+                                                                                      0.50) ** 2 + ALPHA_MOD * A_ST * (X_II - D) ** 2 + (ALPHA_MOD - 1) * A_SC * (X_II - D_L) ** 2
+
     # Impressões
     if PRINT == True:
         print("\n")
@@ -637,10 +701,13 @@ def prop_geometrica_estadio_ii(H_F, B_F, B_W, A_ST, A_SC, ALPHA_MOD, D, D_L, PRI
 
     return X_II, I_II, A_1, A_2, A_3, PASSA_ONDE, X_IITESTE
 
+
 def vazio():
     texto = r'''
     '''
     st.write(texto)
+
+
 def prop_geometrica_estadio_i(H, H_F, B_F, B_W, A_ST, ALPHA_MOD, D, PRINT=False):
     """
     Esta função calcula as propriedades geométricas de uma peça de concreto armado no estádio I.
@@ -662,14 +729,15 @@ def prop_geometrica_estadio_i(H, H_F, B_F, B_W, A_ST, ALPHA_MOD, D, PRINT=False)
     W_INF      | Módulo resistente da seção bordo inferior                 | m³   | float
     W_SUP      | Módulo resistente da seção bordo superior                 | m³   | float    
     """
-    
+
     # Área, Linha Neutra e Inércia
     A_CI = H_F * (B_F - B_W) + B_W * H + A_ST * (ALPHA_MOD - 1)
     PARCELA_1 = (B_F - B_W) * ((H_F ** 2) / 2)
     PARCELA_2 = 0.50 * B_W * H ** 2
     PARCELA_3 = A_ST * (ALPHA_MOD - 1) * D
     X_I = (PARCELA_1 + PARCELA_2 + PARCELA_3) / A_CI
-    I_I = ((B_F - B_W) * H_F ** 3) / 12 + (B_W * H ** 3) / 12 + H_F * (B_F - B_W) * (X_I - H_F * 0.50) ** 2 + B_W * H * (X_I - 0.50 * H) ** 2 + A_ST * (ALPHA_MOD - 1) * (X_I - D) ** 2
+    I_I = ((B_F - B_W) * H_F ** 3) / 12 + (B_W * H ** 3) / 12 + H_F * (B_F - B_W) * (X_I - H_F *
+                                                                                     0.50) ** 2 + B_W * H * (X_I - 0.50 * H) ** 2 + A_ST * (ALPHA_MOD - 1) * (X_I - D) ** 2
     W_SUP = I_I / X_I
     W_INF = I_I / (H - X_I)
 
@@ -683,23 +751,23 @@ def prop_geometrica_estadio_i(H, H_F, B_F, B_W, A_ST, ALPHA_MOD, D, PRINT=False)
         print("W_INF: ", X_I)
         print("W_SUP: ", I_I)
         print("\n")
-    
+
     return A_CI, X_I, I_I, W_INF, W_SUP
 
 
 def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
     """Está função determina o círculo de Mohr para tensões planas 2D.
-    
+
     Args:
         sigma_x (float): Tensão normal em x.
         sigma_y (float): Tensão normal em y.
         tal_xy (float): Tensão de cisalhamento xy.
         impressoes (bool): Se True, imprime os valores calculados.
-    
+
     Returns:
         fig: Retorna a figura com o círculo de Mohr.
     """
-    
+
     # Determinação das tensões máximas, mínimas e suas inclinações
     sigma_med = (sigma_x + sigma_y) / 2
     raio = np.sqrt((0.50 * (sigma_x - sigma_y))**2 + tal_xy**2)
@@ -709,13 +777,16 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
     theta_p_graus = np.degrees(theta_p_radianos)
     theta_c_radianos = np.arctan2(-(sigma_x-sigma_y), 2*tal_xy) / 2
     theta_c_graus = np.degrees(theta_c_radianos)
+
     def calcular_ponto_circunferencia(x_c, y_c, raio, angulo_graus):
         angulo_radianos = np.radians(angulo_graus)
         x = x_c + raio * np.cos(angulo_radianos)
         y = y_c + raio * np.sin(angulo_radianos)
         return x, y
-    sigma_x_linha1, sigma_y_linha1 = calcular_ponto_circunferencia(sigma_med, 0, raio, -theta_p_graus)
-    sigma_x_linha2, sigma_y_linha2 = calcular_ponto_circunferencia(sigma_med, 0, raio, -theta_p_graus+180)
+    sigma_x_linha1, sigma_y_linha1 = calcular_ponto_circunferencia(
+        sigma_med, 0, raio, -theta_p_graus)
+    sigma_x_linha2, sigma_y_linha2 = calcular_ponto_circunferencia(
+        sigma_med, 0, raio, -theta_p_graus+180)
 
     # Criando uma nova figura
     fig, ax = plt.subplots()
@@ -737,10 +808,12 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
 
     # Plotando os pontos de máximo e mínimo e adicionando as anotações
     ax.scatter(*sigma_min, color='red')
-    ax.text(sigma_min[0]-0.27*np.abs(sigma_min[0]), raio*0.10, f'σmin=\n{sigma_minn:.3f}', verticalalignment='top', horizontalalignment='left', color='red')
+    ax.text(sigma_min[0]-0.27*np.abs(sigma_min[0]), raio*0.10,
+            f'σmin=\n{sigma_minn:.3f}', verticalalignment='top', horizontalalignment='left', color='red')
     ax.scatter(*sigma_max, color='red')
-    ax.text(sigma_max[0]+0.15*np.abs(sigma_max[0]), raio*0.10, f'σmax=\n{sigma_maxx:.3f}', verticalalignment='top', horizontalalignment='left', color='red')
-    
+    ax.text(sigma_max[0]+0.15*np.abs(sigma_max[0]), raio*0.10,
+            f'σmax=\n{sigma_maxx:.3f}', verticalalignment='top', horizontalalignment='left', color='red')
+
     # Plotando os pontos A e B
     xa, ya = sigma_x, tal_xy
     xb, yb = sigma_y, -tal_xy
@@ -755,8 +828,10 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
     # print(xb-0.30*xb)
     ax.plot([xa, xb], [ya, yb], color='magenta')
     ax.scatter([xa, xb], [ya, yb], color='magenta')
-    ax.text(xa+0.27*xa, m*(xa+0.27*xa)+b, 'A=σx,τxy', verticalalignment='bottom', horizontalalignment='left', color='magenta')
-    ax.text(xb+0.27*xb, m*(xb+0.27*xb)+b, 'B=σy,-τxy', verticalalignment='bottom', horizontalalignment='left', color='magenta')
+    ax.text(xa+0.27*xa, m*(xa+0.27*xa)+b, 'A=σx,τxy',
+            verticalalignment='bottom', horizontalalignment='left', color='magenta')
+    ax.text(xb+0.27*xb, m*(xb+0.27*xb)+b, 'B=σy,-τxy',
+            verticalalignment='bottom', horizontalalignment='left', color='magenta')
 
     # Adicionando o eixo x passando por y=0
     ax.axhline(y=0, color='black', linestyle='--')
@@ -782,13 +857,17 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
         print(f"sigma_max = {sigma_maxx:.3e}")
         print(f"sigma_min = {sigma_minn:.3e}")
         print(f"inclinação tensões principais theta_p = {theta_p_graus:.3e}")
-        print(f"inclinação tensão máxima cisalhamento theta_c = {theta_c_graus:.3e}")
+        print(
+            f"inclinação tensão máxima cisalhamento theta_c = {theta_c_graus:.3e}")
         print(f"sigma_x_linha1 = {sigma_x_linha1:.3e}")
         print(f"sigma_y_linha1 = {sigma_y_linha1:.3e}")
         print(f"sigma_x_linha2 = {sigma_x_linha2:.3e}")
         print(f"sigma_y_linha2 = {sigma_y_linha2:.3e}")
 
-    return fig, sigma_med, raio, sigma_maxx, sigma_minn, theta_p_graus, theta_c_grausdef area_aco_flexao_simples(b_w, h, d, f_ck, f_ywk, gamma_c, gamma_s, m_sd, v_sd, cob, phi_est, d_max, impressao=False):
+    return fig, sigma_med, raio, sigma_maxx, sigma_minn, theta_p_graus, theta_c_graus
+
+
+def area_aco_flexao_simples(b_w, h, d, f_ck, f_ywk, gamma_c, gamma_s, m_sd, v_sd, cob, phi_est, d_max, impressao=False):
     """
     Esta função determina a área de aço necessária para combater os esforços de flexão na peça de concreto armado de acordo com a NBR 6118.
 
@@ -806,7 +885,7 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
         phi_est (float): Diâmetro do estribo (m)
         d_max (float): Diâmetro máximo do agregado graudo (m)
         impressao (bool): Critério de impressão dos resultados para visualização
-    
+
     Returns:
         x_iii (float): Linha neutra da peça (m)
         z_iii (float): Braço de alavanca (m)
@@ -824,7 +903,7 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
 
     # Verificação constates de projeto
     f_ck /= 1E3
-    if f_ck >  50:
+    if f_ck > 50:
         lambda_c = 0.80 - ((f_ck - 50) / 400)
         alpha_c = (1.00 - ((f_ck - 50) / 200)) * 0.85
         beta = 0.35
@@ -837,7 +916,7 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
     alpha_v2 = 1 - f_ck / 250
     f_ctm *= 1E3
     f_ctksup = 1.30 * f_ctm
-    #f_ctkinf = 0.7 * f_ctm
+    # f_ctkinf = 0.7 * f_ctm
     f_ck *= 1E3
     f_cd = f_ck / gamma_c
     f_yd = f_ywk / gamma_s
@@ -854,11 +933,12 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
     a_slmin = m_sdmin / (z_iii_min * f_yd)
 
     # Cálculo da área de aço armadura simples/dupla e esforços resistentes
-    m_rdlim = b_w * d**2 * lambda_c * beta * alpha_c * f_cd * (1 - 0.50 * lambda_c * beta)
+    m_rdlim = b_w * d**2 * lambda_c * beta * \
+        alpha_c * f_cd * (1 - 0.50 * lambda_c * beta)
     v_rd2 = 0.27 * alpha_v2 * f_cd * b_w * d
     if m_sd > m_rdlim:
         if impressao is True:
-            print("O momento fletor de cálculo é maior que o momento fletor mínimo. Portanto deve-se usar armadura dupla")  
+            print("O momento fletor de cálculo é maior que o momento fletor mínimo. Portanto deve-se usar armadura dupla")
     else:
         zeta = m_sd / (b_w * alpha_c * f_cd)
         aux = d**2 - 2 * zeta
@@ -883,9 +963,10 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
     else:
         v_sw = v_sd - v_c
         f_ywdaux = f_ywk / gamma_s
-        f_ywdmax = 500E3 / gamma_s 
+        f_ywdmax = 500E3 / gamma_s
         f_ywd = min(f_ywdaux, f_ywdmax)
-        a_swaux = v_sw / (0.90 * d * f_ywd * (np.sin(inclinacao_est) + np.cos(inclinacao_est)))
+        a_swaux = v_sw / (0.90 * d * f_ywd *
+                          (np.sin(inclinacao_est) + np.cos(inclinacao_est)))
     a_sw90 = max(a_swaux, a_swmin)
 
     # Espaçamento entre as barras
@@ -895,16 +976,17 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
     a_v = []
     for i in phi_l_aux:
         a_h1 = 2 / 100
-        a_h2 = 1.04 * i 
+        a_h2 = 1.04 * i
         a_h3 = 1.20 * d_max
         a_v3 = 0.50 * d_max
         a_h.append(max(a_h1, a_h2, a_h3))
         a_v.append(max(a_h1, a_h2, a_v3))
 
     # Geração da figura da seção
-    desenhos, n_bar_cam = quantidade_barras_por_camada(phi_est, cob, b_w, a_h, a_sl, impressao)
+    desenhos, n_bar_cam = quantidade_barras_por_camada(
+        phi_est, cob, b_w, a_h, a_sl, impressao)
     fig = desenho_armadura_secao(b_w, h, phi_est, cob, a_v, phi_l, desenhos)
-    
+
     # Impressões
     if impressao is True:
         print("\n")
@@ -922,9 +1004,10 @@ def circulo_mohr_2d(sigma_x, sigma_y, tal_xy, impressoes=False):
 
     return x_iii, z_iii, a_slmin, a_sl, v_rd2, v_c0, a_swmin, a_sw90, a_h, a_v, n_bar_cam, fig
 
+
 def desenho_armadura_secao(b_w, h, phi_est, cob, a_v, barras_long, desenhos):
     """Desenho das barras de aço na seção transversal da viga de concreto armado.
-    
+
     Args:
         b_w (float): Largura da viga (m)
         h (float): Altura da viga (m)
@@ -937,14 +1020,16 @@ def desenho_armadura_secao(b_w, h, phi_est, cob, a_v, barras_long, desenhos):
     Returns:
         fig (matplotlib.figure): Figura com os desenhos das barras de aço na seção transversal da viga
     """
-    
+
     # Criando os desenhos da viga e estribo
     viga_x = [0, b_w, b_w, 0, 0]
-    viga_y = [0, 0, h, h,0] 
+    viga_y = [0, 0, h, h, 0]
     est_ext_x = [cob, b_w - cob, b_w - cob, cob, cob]
     est_ext_y = [cob, cob, h - cob, h - cob, cob]
-    est_int_x = [cob + phi_est, b_w - cob - phi_est, b_w - cob - phi_est, cob + phi_est, cob + phi_est]
-    est_int_y = [cob + phi_est, cob + phi_est, h - cob - phi_est, h - cob - phi_est, cob + phi_est]
+    est_int_x = [cob + phi_est, b_w - cob - phi_est,
+                 b_w - cob - phi_est, cob + phi_est, cob + phi_est]
+    est_int_y = [cob + phi_est, cob + phi_est, h -
+                 cob - phi_est, h - cob - phi_est, cob + phi_est]
 
     # Criando a figura de 8 partes
     fig, axs = plt.subplots(4, 2, figsize=(5, 10), dpi=300)
@@ -976,36 +1061,38 @@ def desenho_armadura_secao(b_w, h, phi_est, cob, a_v, barras_long, desenhos):
             b_disp = b_w - 2 * (cob + phi_est + phi_l/2)
             for l in range(int(desenho_bars[k])):
                 if desenho_bars[k] == 1:
-                  x_coord_aux.append(cob + phi_est + phi_l/2)
-                  break
+                    x_coord_aux.append(cob + phi_est + phi_l/2)
+                    break
                 elif desenho_bars[k] == 2:
-                  x_coord_aux.append(cob + phi_est + phi_l/2)
-                  x_coord_aux.append(b_w - cob - phi_est - phi_l/2)
-                  break
+                    x_coord_aux.append(cob + phi_est + phi_l/2)
+                    x_coord_aux.append(b_w - cob - phi_est - phi_l/2)
+                    break
                 else:
-                  dist = b_disp / n_esp
-                  if l == 0:
-                    aux = cob + phi_est + phi_l/2
-                  elif l == desenho_bars[k] - 1:
-                    aux = b_w - cob - phi_est - phi_l/2
-                  else:
-                    aux = x_coord_aux[l-1] + dist
-                  x_coord_aux.append(aux)
+                    dist = b_disp / n_esp
+                    if l == 0:
+                        aux = cob + phi_est + phi_l/2
+                    elif l == desenho_bars[k] - 1:
+                        aux = b_w - cob - phi_est - phi_l/2
+                    else:
+                        aux = x_coord_aux[l-1] + dist
+                    x_coord_aux.append(aux)
             x_coord.append(x_coord_aux)
         for i in range(len(desenho_bars)):
-          for j in range(int(desenho_bars[i])):
-              x = x_coord[i][j] 
-              y = y_coord[i][j] 
-              circulo = patches.Circle((x, y), raio, edgecolor='red', facecolor='none', linewidth=0.5)
-              ax.add_patch(circulo)
+            for j in range(int(desenho_bars[i])):
+                x = x_coord[i][j]
+                y = y_coord[i][j]
+                circulo = patches.Circle(
+                    (x, y), raio, edgecolor='red', facecolor='none', linewidth=0.5)
+                ax.add_patch(circulo)
         ax.set_xlim(-0.05, b_w+0.05)
         ax.set_ylim(-0.05, h+0.05)
         ax.set_aspect('equal')
         ax.axis('off')
-        plt.tight_layout() 
-               
+        plt.tight_layout()
+
     return fig
-    
+
+
 def quantidade_barras_por_camada(phi_est, cob, b_w, a_h, a_sl, impressao=False):
     """
     Quantidade de barras por camadas.
@@ -1035,7 +1122,8 @@ def quantidade_barras_por_camada(phi_est, cob, b_w, a_h, a_sl, impressao=False):
     for chave, valor in enumerate(phi_l):
         asl_phi.append(np.pi * ((valor * 1.04) ** 2) / 4)
         phi_cor.append(valor + (4/100 * valor))
-        n_bar_por_camada.append(round((b_disp + a_h[chave]) / (valor + a_h[chave])))
+        n_bar_por_camada.append(
+            round((b_disp + a_h[chave]) / (valor + a_h[chave])))
 
     # Cálculo da quantidade total de barras
     for chave, valor in enumerate(asl_phi):
@@ -1067,10 +1155,12 @@ def quantidade_barras_por_camada(phi_est, cob, b_w, a_h, a_sl, impressao=False):
             print(f"Bitola: {valor * 1000} mm")
             print(f"Quantidade de camadas: {n_cam[chave]}")
             print(f"Quantidade total de barras: {n_bar_tot[chave]}")
-            print(f"Quantidade total de barras por camada: {n_bar_por_camada[chave]}")
+            print(
+                f"Quantidade total de barras por camada: {n_bar_por_camada[chave]}")
             print(f"Quantidade de barras por camada: {desenhos[chave]}")
 
     return desenhos, n_bar_por_camada
+
 
 def diagrama_magnel(a_c, y_t, y_b, i_c, sigma_max, sigma_min, m_sd_inicial):
     w_t = i_c / y_t
