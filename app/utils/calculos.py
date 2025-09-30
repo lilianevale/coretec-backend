@@ -6,6 +6,91 @@ import base64
 import os
 import uuid
 
+def shaker(m, b, h, l, omega, modulo_e, t, f_0, x0=0, dx0=0):   
+    """ Essa função calcula a resposta de uma viga submetida a um shaker.
+
+    Args:
+        m (Float): Massa da viga [kg]
+        b (Float): Largura da viga [m]
+        h (Float): Altura da viga [m]
+        l (Float): Comprimento da viga [m]
+        omega (Float): Frequência do shaker [rad/s]
+        modulo_e (Float): Módulo de elasticidade [MPa]
+        t (Float): Tempo [s]
+        f_0 (Float): Força do shaker [N]
+        x0 (Float): Deslocamento inicial [m]
+        dx0 (Float): Velocidade inicial [m/s]
+    
+    Returns:
+        x (Float): Deslocamento vertical da viga [m]
+    """
+    i = b * h**3 / 12
+    k = 192 * modulo_e * i / l ** 3
+    omega_n = np.sqrt(k / m)
+    xx = f_0 / (k - m * omega ** 2)
+    xp = xx * np.cos(omega * t)
+    c1 = x0 - f_0/(k-m*omega**2)
+    c2 = dx0 / omega_n
+    xh = c1 * np.cos(omega_n * t) + c2 * np.sin(omega_n * t)
+    x = xp + xh
+
+    return x
+
+
+def analise_inversa_shaker(m, b, h, l, omega, modulo_e, f_0, dano):
+    """Essa função realiza a análise inversa de um sistema submetido a um shaker.
+
+    Args:
+        m (Float): Massa da viga [kg]
+        b (Float): Largura da viga [m]
+        h (Float): Altura da viga [m]
+        l (Float): Comprimento da viga [m]
+        omega (Float): Frequência do shaker [rad/s]
+        modulo_e (Float): Módulo de elasticidade [MPa]
+        t (Float): Tempo [s]
+        f_0 (Float): Força do shaker [N]
+        dano (Float): Nível de dano da estrutura [0-1]
+
+    Returns:
+        fig (Figure): Figura com o gráfico da análise inversa
+    """
+
+    # Modelo com dano suposto. Ensaio experimental
+    x_values = np.linspace(0, 5, 200, endpoint=True)
+    y_com_dano = [shaker(m, b, h, l, omega, modulo_e * (1 - dano), t, f_0) for t in x_values]
+
+    # Predição do modelo
+    modulo_e_novo = list(np.random.uniform(30000 * (1 - 0.6), 40000, 2000))
+    kk = 0
+    for i, k in enumerate(modulo_e_novo):
+        y_new = [shaker(m, b, h, l, omega, k, t, f_0) for t in x_values]
+        r2 = calcular_r2(y_com_dano, y_new)
+        if i == 0:
+            kk = k
+            r2_final = r2
+            y = copy.deepcopy(y_new)
+        else:
+            if r2_final < calcular_r2(y_com_dano, y_new):
+                kk = k
+                r2_final = r2
+                y = copy.deepcopy(y_new)
+                
+    # Criando a figura e os eixos
+    fig, ax = plt.subplots()
+    
+    ax.plot(x_values, y_com_dano, label='Experimento estrutura c/ dano', linestyle='-', color='red')
+    ax.plot(x_values, y, label=f'Identificação módulo E \n  = {kk:.2f} com r² = {r2_final:.4e}', linestyle='--', color='blue')
+
+    # Personalizando o gráfico
+    ax.set_xlabel('$t$ ($s$)')
+    ax.set_ylabel('$x$ ($m$)')
+    ax.legend()
+    ax.grid(True)
+    plt.close
+
+    # fig.savefig('figura.png')
+    return fig, kk, y_com_dano
+
 def martelo_impacto_resposta_tempo(f, c, k, m, t):
     """Essa função calcula a resposta de um sistema massa-mola-amortecedor a um martelo de impacto.
     
