@@ -50,7 +50,7 @@ def create_app():
     from .routes.idf import idf_bp
     from .routes.marteloimpacto import marteloimpacto_bp
     from .routes.alvenaria_estrutural import alvenaria_bp
-
+    from .routes.shaker import shaker_bp
 
 
     from .routes.gerador_questoes import gerador_questoes_bp
@@ -75,6 +75,8 @@ def create_app():
     app.register_blueprint(sapatasotimizado_bp)
     app.register_blueprint(sapatas_bp)
     app.register_blueprint(gerador_questoes_bp)
+    app.register_blueprint(shaker_bp)
+
     app.register_blueprint(auth_bp, url_prefix="/auth")
 
     return app
