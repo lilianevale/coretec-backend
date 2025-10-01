@@ -41,17 +41,21 @@ def idf_endpoint():
         caminho_completo = os.path.join(pasta_destino, nome_arquivo)
         fig.savefig(caminho_completo, dpi=300, bbox_inches='tight')
         plt.close(fig)
-
         imagem_url = f"/static/imagens/{nome_arquivo}"
 
+        data=download_excel(df_longo),
+                    file_name=f"PLANILHA_IDF_{nome_arquivo}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        
         return jsonify({
             "h_max1aux": h_max1aux.to_dict(orient='records'),
             "preciptacao": preciptacao.to_dict(orient='records'),
             "intensidade": intensidade.to_dict(orient='records'),
             "df_longo": df_longo.to_dict(orient='records'),
-            "media": media,
-            "desvio_padrao": desvio_padrao,
-            "imagem_url": imagem_url
+            "media": f': {media:.2f} mm',
+            "desvio_padrao": f': {desvio_padrao:.2f} mm',
+            "imagem_url": imagem_url,
+            "data": data
         })
 
     elif request.method == 'GET':
