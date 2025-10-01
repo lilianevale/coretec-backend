@@ -3,17 +3,17 @@ import pandas as pd
 import numpy as np
 from itertools import combinations
 from app.utils.calculos import plot_data
+import io
+import base64
 
 sapatasotimizado_bp = Blueprint('sapatasotimizado', __name__)
 
 # Variáveis globais
-fig = None
 response_data = {}
-
 
 @sapatasotimizado_bp.route('/sapatasotimizado', methods=['POST', 'GET'])
 def handle_sapatasotimizado():
-    global response_data, fig
+    global response_data
 
     if request.method == 'POST':
         # Arquivo SPT
@@ -90,10 +90,16 @@ def handle_sapatasotimizado():
             }
             fig = plot_data(data_plot)
 
+            # Salvar figura em memória como Base64
+            img_bytes = io.BytesIO()
+            fig.savefig(img_bytes, format='png', bbox_inches='tight')
+            img_bytes.seek(0)
+            img_base64 = base64.b64encode(img_bytes.read()).decode('utf-8')
+
             return jsonify({
                 'table1': df_final.to_dict(orient="records"),
                 'table2': data_valid_combinations,
-                'fig': str(fig)  # pode ser transformado em imagem base64 se quiser
+                'fig_base64': img_base64
             })
         else:
             return jsonify({'error': "Não foi possível encontrar a coluna 'Elem' em ambos os arquivos."}), 400

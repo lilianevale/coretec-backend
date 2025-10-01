@@ -11,3 +11,4 @@ flask-jwt-extended
 pymysql
 Flask-Mail
 python-pptx
+scipy

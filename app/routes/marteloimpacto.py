@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
-from app.utils.calculos import perda_relax_armadura
-import pandas as pd
-from app.utils.calculos import analise_inversa_martelo_impacto, martelo_impacto_gif
-
+from app.utils.calculos_martelo_impacto import analise_inversa_martelo_impacto, martelo_impacto_gif
+import os
+import uuid
+import matplotlib
+matplotlib.use("Agg")  # Backend para servidor
+import matplotlib.pyplot as plt
 
 marteloimpacto_bp = Blueprint('martelo', __name__)
 
-# Variáveis globais como no seu código original
+# Variáveis globais
 gif_buffer, fig, kk, y = None, None, 0, 0
 response_data = {}
 
@@ -19,51 +21,51 @@ def handle_martelo():
     if request.method == 'POST':
         data = request.get_json()
 
-        # Entrada dos dados e conversão de unidades
-        m = float(data.get('massa1'))
-        c = float(data.get('amortecimento1'))
-        f = float(data.get('forca1'))
-        k = float(data.get('valor'))
-        dano = float(data.get('dano1'))
+        # Entrada dos dados
+        m = float(data.get('massa1', 1))
+        c = float(data.get('amortecimento1', 0))
+        f = float(data.get('forca1', 1))
+        k = float(data.get('valor', 1000))
+        dano = float(data.get('dano1', 0))
 
-        # Chamada da função de cálculo
+        # Cálculo principal
         fig, kk, y = analise_inversa_martelo_impacto(m, c, f, k, dano)
-        pyplot(fig)
 
-        # Salvar fig na pasta do projeto
-        nome_arquivo = f"vao_{uuid.uuid4().hex[:8]}.png"
+        # Pasta destino
         pasta_destino = os.path.join("app", "static", "imagens")
         os.makedirs(pasta_destino, exist_ok=True)
-        caminho_completo = os.path.join(pasta_destino, nome_arquivo)
-        fig.savefig(caminho_completo, dpi=300, bbox_inches='tight')
+
+        # Salvar figura
+        nome_arquivo_fig = f"vao_{uuid.uuid4().hex[:8]}.png"
+        caminho_fig = os.path.join(pasta_destino, nome_arquivo_fig)
+        fig.savefig(caminho_fig, dpi=300, bbox_inches='tight')
         plt.close(fig)
-        imagem_url2 = f"/static/imagens/{nome_arquivo}"
+        imagem_url_fig = f"/static/imagens/{nome_arquivo_fig}"
 
-        gif_buffer = martelo_impacto_gif(y)
-
-        # Salvar gif_buffer na pasta do projeto
-        nome_arquivo = f"vao_{uuid.uuid4().hex[:8]}.png"
-        pasta_destino = os.path.join("app", "static", "imagens")
-        os.makedirs(pasta_destino, exist_ok=True)
-        caminho_completo = os.path.join(pasta_destino, nome_arquivo)
-        gif_buffer.savefig(caminho_completo, dpi=300, bbox_inches='tight')
-        plt.close(gif_buffer)
-        imagem_url1 = f"/static/imagens/{nome_arquivo}"
+        # Gerar GIF
+        gif_frames = martelo_impacto_gif(y)
+        nome_arquivo_gif = f"vao_{uuid.uuid4().hex[:8]}.gif"
+        caminho_gif = os.path.join(pasta_destino, nome_arquivo_gif)
+        gif_frames[0].save(
+            caminho_gif,
+            save_all=True,
+            append_images=gif_frames[1:],
+            loop=0,
+            duration=100
+        )
+        imagem_url_gif = f"/static/imagens/{nome_arquivo_gif}"
 
         return jsonify({
-            'fig': imagem_url1,
-            'gif_buffer': imagem_url2,
+            'fig': imagem_url_fig,
+            'gif': imagem_url_gif,
             'kk': f'{kk:.2f} N/m',
-
         })
 
     elif request.method == 'GET':
         response_data = {
-            'fig': fig,
-            'gif_buffer': gif_buffer,
+            'fig': None,
+            'gif': None,
             'kk': f'{kk:.2f} N/m',
-
-
         }
 
     return jsonify(response_data)

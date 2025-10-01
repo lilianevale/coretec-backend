@@ -5,6 +5,10 @@ import io
 import base64
 import os
 import uuid
+import copy
+from matplotlib import patches
+from PIL import Image
+import tempfile
 
 
 def shaker(m, b, h, l, omega, modulo_e, t, f_0, x0=0, dx0=0):
@@ -97,24 +101,41 @@ def analise_inversa_shaker(m, b, h, l, omega, modulo_e, f_0, dano):
 
 
 def martelo_impacto_resposta_tempo(f, c, k, m, t):
-    """Essa função calcula a resposta de um sistema massa-mola-amortecedor a um martelo de impacto.
+    """
+    Calcula a resposta de um sistema massa-mola-amortecedor a um martelo de impacto.
 
     Args:
-        f (Float): Força do martelo [N.s]
-        c (Float): Coeficiente de amortecimento [N.s/m]
-        k (Float): Coeficiente da rigidez [N/m]
-        m (Float): Massa do sistema [kg]
-        t (Float): Tempo [s]
+        f (float): Força do martelo [N.s]
+        c (float): Coeficiente de amortecimento [N.s/m]
+        k (float): Coeficiente da rigidez [N/m]
+        m (float): Massa do sistema [kg]
+        t (float): Tempo [s]
 
     Returns:
-        x (Float): Deslocamento do sistema [m]
-        w_n (Float): Frequência natural do sistema [rad/s]
+        x (float): Deslocamento do sistema [m]
     """
 
-    w_n = np.sqrt(k / m)
-    zeta = c / (2 * m * w_n)
-    w_d = w_n * np.sqrt(1 - zeta ** 2)
-    x = f * (np.exp(-zeta * w_n * t) / m * w_d) * np.sin(w_d * t)
+    # Evita divisão por zero
+    if m <= 0:
+        m = 1e-6
+    if k <= 0:
+        k = 1e-6
+
+    w_n = np.sqrt(k / m)  # frequência natural
+    zeta = c / (2 * m * w_n)  # coef. amortecimento
+
+    # Evita sqrt de negativo (amortecimento crítico ou supercrítico)
+    arg = 1 - zeta**2
+    w_d = w_n * np.sqrt(arg) if arg > 0 else 0.0
+
+    # Evita divisão por zero
+    if w_d == 0:
+        x = 0.0
+    else:
+        x = f * (np.exp(-zeta * w_n * t) / (m * w_d)) * np.sin(w_d * t)
+
+    # Garantir que não seja NaN/Inf
+    x = np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
 
     return x
 
@@ -139,62 +160,40 @@ def calcular_r2(y_real, y_predito):
 
 
 def analise_inversa_martelo_impacto(m, c, f, k, dano):
-    """Essa função realiza a análise inversa de um sistema massa-mola-amortecedor a um martelo de impacto.
+    x_values = np.linspace(0, 5, 200)
+    y_sem_dano = [martelo_impacto_resposta_tempo(f, c, k, m, t) for t in x_values]
+    y_com_dano = [martelo_impacto_resposta_tempo(f, c, k*(1-dano), m, t) for t in x_values]
 
-    Args:
-        m (Float): Massa do sistema [kg]
-        c (Float): Coeficiente de amortecimento [N.s/m]
-        f (Float): Força do martelo [N.s]
-        k (Float): Coeficiente da rigidez [N/m]
-        dano (Float): Nível de dano da estrutura [0-1]
-
-    Returns:
-        fig (Figure): Figura com o gráfico da análise inversa
-    """
-
-    x_values = np.linspace(0, 5, 200, endpoint=True)
-    y_sem_dano = [martelo_impacto_resposta_tempo(
-        f, c, k, m, t) for t in x_values]
-    y_com_dano = [martelo_impacto_resposta_tempo(
-        f, c, k * (1 - dano), m, t) for t in x_values]
-
-    # Predição do modelo
-    k_novo = list(np.random.uniform(1500 * (1 - 0.60), 2000, 2000))
+    k_novo = list(np.random.uniform(1500*(1-0.6), 2000, 2000))
     kk = 0
-    for i, k in enumerate(k_novo):
-        y_new = [martelo_impacto_resposta_tempo(
-            f, c, k, m, t) for t in x_values]
+    r2_final = float('-inf')
+    y = None
+
+    for i, k_val in enumerate(k_novo):
+        y_new = [martelo_impacto_resposta_tempo(f, c, k_val, m, t) for t in x_values]
         r2 = calcular_r2(y_com_dano, y_new)
-        if i == 0:
-            kk = k
+        if r2 > r2_final:
+            kk = k_val
             r2_final = r2
             y = copy.deepcopy(y_new)
-        else:
-            if r2_final < calcular_r2(y_com_dano, y_new):
-                kk = k
-                r2_final = r2
-                y = copy.deepcopy(y_new)
 
-    # Criando a figura e os eixos
+    # fallback caso y não tenha sido definido
+    if y is None:
+        y = y_com_dano
+        kk = k
+
     fig, ax = plt.subplots()
+    ax.plot(x_values, y_sem_dano, label='Experimento s/ dano', color='green')
+    ax.plot(x_values, y_com_dano, label='Experimento c/ dano', color='red')
+    ax.plot(x_values, y, label=f'Identificação rigidez k={kk:.2f}, r²={r2_final:.4e}', linestyle='--', color='blue')
 
-    # Plotando os dados
-    ax.plot(x_values, y_sem_dano, label='Experimento martelo estrutura s/ dano',
-            linestyle='-', color='green')
-    ax.plot(x_values, y_com_dano, label='Experimento martelo estrutura c/ dano',
-            linestyle='-', color='red')
-    ax.plot(x_values, y,
-            label=f'Identificação rigidez \n k = {kk:.2f} com r² = {r2_final:.4e}', linestyle='--', color='blue')
-
-    # Personalizando o gráfico
-    ax.set_xlabel('$t$ ($s$)')
-    ax.set_ylabel('$x$ ($m$)')
+    ax.set_xlabel('t (s)')
+    ax.set_ylabel('x (m)')
     ax.legend()
     ax.grid(True)
-    plt.close
+    plt.close(fig)
 
-    # fig.savefig('figura.png')
-    return fig, kk, y_com_dano
+    return fig, kk, y
 
 
 def martelo_impacto_gif(y_com_dano, tempo=5, num_frames=200):
@@ -481,6 +480,14 @@ def problema_inverso_idf(df_long):
 
     return a_opt, b_opt, c_opt, d_opt
 
+
+def quinhao_de_carga(row, ai_soma, aix_soma, aiy_soma, e_x, e_y):
+    """
+    Calcula o quinhão de carga de uma parede.
+    Retorna o percentual da carga total que incide nesta parede.
+    """
+    # Exemplo simplificado: proporcional à área da parede
+    return (row['area (m2)'] / ai_soma) * 100
 
 def projeto_paredes_compressao(dados_parede_aux, gamma_f, gamma_w, f_pk, g, q, g_wall, n_pavtos, x_total, y_total, tipo_argamassa):
     """
