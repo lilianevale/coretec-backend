@@ -16,9 +16,9 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
         st.error(f"Arquivo {gtfs_zip_path} não encontrado. Verifique o caminho e o nome do arquivo.")
         return
     
-    st.write("Arquivo GTFS encontrado, extraindo...")
+    write("Arquivo GTFS encontrado, extraindo...")
     extract_zip(gtfs_zip_path, extract_to)
-    st.write("Extração concluída. Verificando arquivos...")
+    write("Extração concluída. Verificando arquivos...")
 
     # Caminhos dos arquivos extraídos do zip
     shapes_path = os.path.join(extract_to, 'shapes.txt')
@@ -44,22 +44,22 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
             data_loaded = False
             st.error("Um ou mais arquivos GTFS estão vazios ou não têm dados válidos.")
     except pd.errors.EmptyDataError as e:
-        st.error(f"Erro ao ler um dos arquivos GTFS: {str(e)}")
+        error(f"Erro ao ler um dos arquivos GTFS: {str(e)}")
         data_loaded = False
 
     if data_loaded:
-        st.title(APP_TITLE)
-        st.caption(APP_SUB_TITLE)
+        title(APP_TITLE)
+        caption(APP_SUB_TITLE)
 
         # Exibir informações da rota
         selected_route = st.selectbox('Selecione a rota', routes['route_short_name'].unique())
-        st.write('Rota selecionada:', selected_route)
+        write('Rota selecionada:', rota)
 
         # Exibir informações da rota selecionada
-        st.subheader(f'Informações da Rota {selected_route}')
+        subheader(f'Informações da Rota {selected_route}')
         route_info = routes[routes['route_short_name'] == selected_route]
-        st.write(f"Rota ID: {route_info['route_id'].values[0]}")
-        st.write(f"Total de viagens associadas: {len(trips[trips['route_id'] == route_info['route_id'].values[0]])}")
+        write(f"Rota ID: {route_info['route_id'].values[0]}")
+        write(f"Total de viagens associadas: {len(trips[trips['route_id'] == route_info['route_id'].values[0]])}")
 
         # Associar shape_id com route_id e depois com route_short_name
         trips_routes = pd.merge(
@@ -137,18 +137,18 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
         st_folium(mapa, width=700, height=450)
 
         # Exibir os comprimentos de ida e volta
-        st.subheader("Comprimento das Linhas por Sentido")
+        subheader("Comprimento das Linhas por Sentido")
         for index, (ida, volta) in enumerate(zip(ida_lengths, volta_lengths)):
-            st.write(f"Rota {index + 1}: Ida - {ida:.2f} Km, Volta - {volta:.2f} Km")
+            write(f"Rota {index + 1}: Ida - {ida:.2f} Km, Volta - {volta:.2f} Km")
 
         # Exibir contagem de pontos de ônibus
-        st.subheader("Número de Pontos de Ônibus por Sentido")
-        st.write(f"Total de pontos de ônibus na Ida: {ida_stops_count}")
+        subheader("Número de Pontos de Ônibus por Sentido")
+        write(f"Total de pontos de ônibus na Ida: {ida_stops_count}")
         st.write(f"Total de pontos de ônibus na Volta: {volta_stops_count}")
 
         # Calcular a distância ideal usando o primeiro e último ponto das rotas
         ideal_distance = 0
-        for shape_id in selected_shape_ids:
+         shape_id in selected_shape_ids:
             shape_points = shapes[shapes['shape_id'] == shape_id].sort_values(by='shape_pt_sequence')
             if not shape_points.empty:
                 start_point = shape_points.iloc[0]
@@ -162,18 +162,18 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
         # Calcular a eficiência operacional (Ge)
         if total_real_distance > 0:
             ge = (2 * ideal_distance) / total_real_distance
-            st.subheader("Eficiência Operacional (Ge)")
-            st.write(f"Distância ideal (ida e volta): {2 * ideal_distance:.2f} Km")
-            st.write(f"Distância real percorrida (ida e volta): {total_real_distance:.2f} Km")
-            st.write(f"Eficiência Operacional (Ge): {ge:.2f}")
+            subheader("Eficiência Operacional (Ge)")
+            write(f"Distância ideal (ida e volta): {2 * ideal_distance:.2f} Km")
+            write(f"Distância real percorrida (ida e volta): {total_real_distance:.2f} Km")
+            write(f"Eficiência Operacional (Ge): {ge:.2f}")
 
             # Cálculo do Índice de Ineficiência (Ii)
             ii = 1 - ge
-            st.subheader("Índice de Ineficiência (Ii)")
-            st.write(f"Índice de Ineficiência (Ii): {ii:.2f}")
+            subheader("Índice de Ineficiência (Ii)")
+            write(f"Índice de Ineficiência (Ii): {ii:.2f}")
 
         else:
-            st.write("Erro ao calcular a distância ideal. Verifique os dados de rota.")
+            write("Erro ao calcular a distância ideal. Verifique os dados de rota.")
 
 def shaker(m, b, h, l, omega, modulo_e, t, f_0, x0=0, dx0=0):
     """ Essa função calcula a resposta de uma viga submetida a um shaker.
