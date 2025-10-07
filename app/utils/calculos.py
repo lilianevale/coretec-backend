@@ -10,6 +10,170 @@ from matplotlib import patches
 from PIL import Image
 import tempfile
 
+def main(gtfs_zip_path, extract_to='gtfs_data'):
+    # Verificar se o arquivo GTFS existe e extraí-lo
+    if not os.path.isfile(gtfs_zip_path):
+        st.error(f"Arquivo {gtfs_zip_path} não encontrado. Verifique o caminho e o nome do arquivo.")
+        return
+    
+    st.write("Arquivo GTFS encontrado, extraindo...")
+    extract_zip(gtfs_zip_path, extract_to)
+    st.write("Extração concluída. Verificando arquivos...")
+
+    # Caminhos dos arquivos extraídos do zip
+    shapes_path = os.path.join(extract_to, 'shapes.txt')
+    trips_path = os.path.join(extract_to, 'trips.txt')
+    routes_path = os.path.join(extract_to, 'routes.txt')
+    stops_path = os.path.join(extract_to, 'stops.txt')
+    stop_times_path = os.path.join(extract_to, 'stop_times.txt')
+
+    if not all(os.path.isfile(file) for file in [shapes_path, trips_path, routes_path, stops_path, stop_times_path]):
+        st.error("Um ou mais arquivos GTFS não foram encontrados após a extração.")
+        return
+
+    # Tentar carregar os arquivos GTFS
+    data_loaded = True
+    try:
+        shapes = pd.read_csv(shapes_path)
+        trips = pd.read_csv(trips_path)
+        routes = pd.read_csv(routes_path)
+        stops = pd.read_csv(stops_path)
+        stop_times = pd.read_csv(stop_times_path)
+
+        if shapes.empty or trips.empty or routes.empty or stops.empty or stop_times.empty:
+            data_loaded = False
+            st.error("Um ou mais arquivos GTFS estão vazios ou não têm dados válidos.")
+    except pd.errors.EmptyDataError as e:
+        st.error(f"Erro ao ler um dos arquivos GTFS: {str(e)}")
+        data_loaded = False
+
+    if data_loaded:
+        st.title(APP_TITLE)
+        st.caption(APP_SUB_TITLE)
+
+        # Exibir informações da rota
+        selected_route = st.selectbox('Selecione a rota', routes['route_short_name'].unique())
+        st.write('Rota selecionada:', selected_route)
+
+        # Exibir informações da rota selecionada
+        st.subheader(f'Informações da Rota {selected_route}')
+        route_info = routes[routes['route_short_name'] == selected_route]
+        st.write(f"Rota ID: {route_info['route_id'].values[0]}")
+        st.write(f"Total de viagens associadas: {len(trips[trips['route_id'] == route_info['route_id'].values[0]])}")
+
+        # Associar shape_id com route_id e depois com route_short_name
+        trips_routes = pd.merge(
+            trips[['trip_id', 'route_id', 'shape_id']],
+            routes[['route_id', 'route_short_name']],
+            on='route_id',
+            how='left'
+        )
+
+        # Filtrar a rota selecionada
+        filtered_trips = trips_routes[trips_routes['route_short_name'] == selected_route]
+        selected_shape_ids = filtered_trips['shape_id'].unique()
+
+        # Criar o mapa
+        mapa = folium.Map(location=[-19.9167, -43.9345], zoom_start=12)
+
+        # Adicionar as rotas ao mapa
+        colors = ['blue', 'orange']  # Paleta de cores para ida e volta
+        ida_lengths = []
+        volta_lengths = []
+        ida_stops_count = 0  # Contador para pontos de ônibus na ida
+        volta_stops_count = 0  # Contador para pontos de ônibus na volta
+
+        for i, shape_id in enumerate(selected_shape_ids):
+            shape_points = shapes[shapes['shape_id'] == shape_id].sort_values(by='shape_pt_sequence')
+            if not shape_points.empty:
+                color = colors[i % len(colors)]  # Cor ciclicamente atribuída
+                
+                # Calcular a distância da linha (ida e volta separadamente)
+                ida_distance = 0
+                volta_distance = 0
+                for j in range(1, len(shape_points)):
+                    lat1, lon1 = shape_points.iloc[j - 1]['shape_pt_lat'], shape_points.iloc[j - 1]['shape_pt_lon']
+                    lat2, lon2 = shape_points.iloc[j]['shape_pt_lat'], shape_points.iloc[j]['shape_pt_lon']
+                    if j < len(shape_points) // 2:  # Parte da ida
+                        ida_distance += haversine(lat1, lon1, lat2, lon2)
+                    else:  # Parte da volta
+                        volta_distance += haversine(lat1, lon1, lat2, lon2)
+
+                ida_lengths.append(ida_distance)
+                volta_lengths.append(volta_distance)
+
+                folium.PolyLine(
+                    locations=list(zip(shape_points['shape_pt_lat'], shape_points['shape_pt_lon'])),
+                    color=color,
+                    weight=2.5,
+                    opacity=0.8
+                ).add_to(mapa)
+                
+                # Adicionar marcadores de início e fim
+                start_point = shape_points.iloc[0]
+                end_point = shape_points.iloc[-1]
+                
+                folium.Marker(
+                    location=[start_point['shape_pt_lat'], start_point['shape_pt_lon']],
+                    popup='Início',
+                    icon=folium.Icon(color='green', icon='play')
+                ).add_to(mapa)
+
+                folium.Marker(
+                    location=[end_point['shape_pt_lat'], end_point['shape_pt_lon']],
+                    popup='Fim',
+                    icon=folium.Icon(color='red', icon='stop')
+                ).add_to(mapa)
+
+                # Filtrar paradas associadas à viagem
+                trip_ids_for_shape = filtered_trips[filtered_trips['shape_id'] == shape_id]['trip_id']
+                filtered_stop_times = stop_times[stop_times['trip_id'].isin(trip_ids_for_shape)]
+                stops_for_shape = stops[stops['stop_id'].isin(filtered_stop_times['stop_id'])]
+
+                # Contar pontos de ônibus por sentido (dividido pela metade como ida/volta)
+                ida_stops_count += len(stops_for_shape) // 2
+                volta_stops_count += len(stops_for_shape) // 2
+
+        st_folium(mapa, width=700, height=450)
+
+        # Exibir os comprimentos de ida e volta
+        st.subheader("Comprimento das Linhas por Sentido")
+        for index, (ida, volta) in enumerate(zip(ida_lengths, volta_lengths)):
+            st.write(f"Rota {index + 1}: Ida - {ida:.2f} Km, Volta - {volta:.2f} Km")
+
+        # Exibir contagem de pontos de ônibus
+        st.subheader("Número de Pontos de Ônibus por Sentido")
+        st.write(f"Total de pontos de ônibus na Ida: {ida_stops_count}")
+        st.write(f"Total de pontos de ônibus na Volta: {volta_stops_count}")
+
+        # Calcular a distância ideal usando o primeiro e último ponto das rotas
+        ideal_distance = 0
+        for shape_id in selected_shape_ids:
+            shape_points = shapes[shapes['shape_id'] == shape_id].sort_values(by='shape_pt_sequence')
+            if not shape_points.empty:
+                start_point = shape_points.iloc[0]
+                end_point = shape_points.iloc[-1]
+                ideal_distance += haversine(start_point['shape_pt_lat'], start_point['shape_pt_lon'],
+                                            end_point['shape_pt_lat'], end_point['shape_pt_lon'])
+
+        # Calcular a distância real total (ida + volta)
+        total_real_distance = sum(ida_lengths) + sum(volta_lengths)
+
+        # Calcular a eficiência operacional (Ge)
+        if total_real_distance > 0:
+            ge = (2 * ideal_distance) / total_real_distance
+            st.subheader("Eficiência Operacional (Ge)")
+            st.write(f"Distância ideal (ida e volta): {2 * ideal_distance:.2f} Km")
+            st.write(f"Distância real percorrida (ida e volta): {total_real_distance:.2f} Km")
+            st.write(f"Eficiência Operacional (Ge): {ge:.2f}")
+
+            # Cálculo do Índice de Ineficiência (Ii)
+            ii = 1 - ge
+            st.subheader("Índice de Ineficiência (Ii)")
+            st.write(f"Índice de Ineficiência (Ii): {ii:.2f}")
+
+        else:
+            st.write("Erro ao calcular a distância ideal. Verifique os dados de rota.")
 
 def shaker(m, b, h, l, omega, modulo_e, t, f_0, x0=0, dx0=0):
     """ Essa função calcula a resposta de uma viga submetida a um shaker.
