@@ -6,6 +6,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from datetime import timedelta
 from app import mail
 from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 
 
 auth_bp = Blueprint('auth', __name__)
@@ -116,3 +117,76 @@ def profile():
         "email": user.email,
         "role": user.role.value
     }), 200
+
+serializer = URLSafeTimedSerializer("chave-secreta-reset-senha")
+
+
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    data = request.get_json()
+    email = data.get("email")
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"msg": "E-mail não encontrado"}), 404
+
+    # Gera token válido por 1 hora
+    token = serializer.dumps(email, salt="reset-password-salt")
+
+    # altere para seu front real
+    reset_link = f"http://localhost:3000/reset-password/{token}"
+    html_body = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f6f6f6;">
+        <div style="max-width: 600px; margin: auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="background-color: #003366; padding: 20px; color: white;">
+                <h2>Redefinição de senha - Coretec</h2>
+            </div>
+            <div style="padding: 20px; color: #333;">
+                <p>Olá <strong>{user.name}</strong>,</p>
+                <p>Recebemos um pedido para redefinir sua senha.</p>
+                <p>Clique no botão abaixo para criar uma nova senha. Este link é válido por 1 hora.</p>
+                <a href="{reset_link}" style="display:inline-block; background-color:#003366; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; margin-top:20px;">Redefinir senha</a>
+                <p style="margin-top:20px;">Se você não solicitou, ignore este e-mail.</p>
+            </div>
+        </div>
+    </div>
+    """
+
+    try:
+        msg = Message(
+            subject="🔑 Redefinição de senha - Coretec",
+            recipients=[email],
+            html=html_body
+        )
+        mail.send(msg)
+    except Exception as e:
+        print("Erro ao enviar e-mail:", e)
+        return jsonify({"msg": "Erro ao enviar e-mail"}), 500
+
+    return jsonify({"msg": "E-mail de recuperação enviado com sucesso"}), 200
+
+
+@auth_bp.route("/reset-password/<token>", methods=["POST"])
+def reset_password(token):
+    try:
+        email = serializer.loads(
+            token, salt="reset-password-salt", max_age=3600)
+    except SignatureExpired:
+        return jsonify({"msg": "Token expirado"}), 400
+    except BadSignature:
+        return jsonify({"msg": "Token inválido"}), 400
+
+    data = request.get_json()
+    new_password = data.get("password")
+
+    if not new_password or len(new_password) < 6:
+        return jsonify({"msg": "Senha deve ter ao menos 6 caracteres"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"msg": "Usuário não encontrado"}), 404
+
+    user.password = generate_password_hash(new_password)
+    db.session.commit()
+
+    return jsonify({"msg": "Senha redefinida com sucesso"}), 200

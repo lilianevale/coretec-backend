@@ -7,32 +7,41 @@ from .models import db
 
 mail = Mail()
 
+
 def create_app():
     app = Flask(__name__)
     CORS(app)
-    
-     # Configuração do MySQL
+
+    # Configuração do MySQL
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://u758915510_liliane:Liliane2025@193.203.175.84/u758915510_liliane'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        "pool_recycle": 180,
+        "pool_pre_ping": True,
+        "pool_size": 10,
+        "max_overflow": 20
+    }
 
     # Configuração do JWT
     app.config["JWT_SECRET_KEY"] = "Term228687535@"
     jwt = JWTManager(app)
-    
+
     app.config['UPLOAD_FOLDER'] = 'uploads'
-    
+
     # Configuração do e-mail
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # ou outro servidor
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USERNAME'] = 'coretectools.ufcat@gmail.com'  # coloque seu e-mail aqui
-    app.config['MAIL_PASSWORD'] = 'legvkwgyjkducauk'     # app password ou senha real
+    # coloque seu e-mail aqui
+    app.config['MAIL_USERNAME'] = 'coretectools.ufcat@gmail.com'
+    # app password ou senha real
+    app.config['MAIL_PASSWORD'] = 'legvkwgyjkducauk'
     app.config['MAIL_DEFAULT_SENDER'] = 'ezequiel.pires082000@gmail.com'
 
     # Inicializa DB
     db.init_app(app)
     mail.init_app(app)
-    
+
     from .routes.magnel import magnel_bp
     from .routes.pretracao import pretracao_bp
     from .routes.ancoragem import ancoragem_bp
@@ -51,7 +60,6 @@ def create_app():
     from .routes.marteloimpacto import marteloimpacto_bp
     from .routes.alvenaria_estrutural import alvenaria_bp
     from .routes.shaker import shaker_bp
-
 
     from .routes.gerador_questoes import gerador_questoes_bp
     from .routes.auth import auth_bp
