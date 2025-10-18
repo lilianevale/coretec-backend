@@ -10,12 +10,14 @@ from matplotlib import patches
 from PIL import Image
 import tempfile
 
+
 def main(gtfs_zip_path, extract_to='gtfs_data'):
     # Verificar se o arquivo GTFS existe e extraí-lo
     if not os.path.isfile(gtfs_zip_path):
-        st.error(f"Arquivo {gtfs_zip_path} não encontrado. Verifique o caminho e o nome do arquivo.")
+        st.error(
+            f"Arquivo {gtfs_zip_path} não encontrado. Verifique o caminho e o nome do arquivo.")
         return
-    
+
     write("Arquivo GTFS encontrado, extraindo...")
     extract_zip(gtfs_zip_path, extract_to)
     write("Extração concluída. Verificando arquivos...")
@@ -42,7 +44,8 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
 
         if shapes.empty or trips.empty or routes.empty or stops.empty or stop_times.empty:
             data_loaded = False
-            st.error("Um ou mais arquivos GTFS estão vazios ou não têm dados válidos.")
+            st.error(
+                "Um ou mais arquivos GTFS estão vazios ou não têm dados válidos.")
     except pd.errors.EmptyDataError as e:
         error(f"Erro ao ler um dos arquivos GTFS: {str(e)}")
         data_loaded = False
@@ -52,14 +55,16 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
         caption(APP_SUB_TITLE)
 
         # Exibir informações da rota
-        selected_route = st.selectbox('Selecione a rota', routes['route_short_name'].unique())
+        selected_route = st.selectbox(
+            'Selecione a rota', routes['route_short_name'].unique())
         write('Rota selecionada:', rota)
 
         # Exibir informações da rota selecionada
         subheader(f'Informações da Rota {selected_route}')
         route_info = routes[routes['route_short_name'] == selected_route]
         write(f"Rota ID: {route_info['route_id'].values[0]}")
-        write(f"Total de viagens associadas: {len(trips[trips['route_id'] == route_info['route_id'].values[0]])}")
+        write(
+            f"Total de viagens associadas: {len(trips[trips['route_id'] == route_info['route_id'].values[0]])}")
 
         # Associar shape_id com route_id e depois com route_short_name
         trips_routes = pd.merge(
@@ -70,7 +75,8 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
         )
 
         # Filtrar a rota selecionada
-        filtered_trips = trips_routes[trips_routes['route_short_name'] == selected_route]
+        filtered_trips = trips_routes[trips_routes['route_short_name']
+                                      == selected_route]
         selected_shape_ids = filtered_trips['shape_id'].unique()
 
         # Criar o mapa
@@ -84,15 +90,17 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
         volta_stops_count = 0  # Contador para pontos de ônibus na volta
 
         for i, shape_id in enumerate(selected_shape_ids):
-            shape_points = shapes[shapes['shape_id'] == shape_id].sort_values(by='shape_pt_sequence')
+            shape_points = shapes[shapes['shape_id'] ==
+                                  shape_id].sort_values(by='shape_pt_sequence')
             if not shape_points.empty:
                 color = colors[i % len(colors)]  # Cor ciclicamente atribuída
-                
+
                 # Calcular a distância da linha (ida e volta separadamente)
                 ida_distance = 0
                 volta_distance = 0
                 for j in range(1, len(shape_points)):
-                    lat1, lon1 = shape_points.iloc[j - 1]['shape_pt_lat'], shape_points.iloc[j - 1]['shape_pt_lon']
+                    lat1, lon1 = shape_points.iloc[j -
+                                                   1]['shape_pt_lat'], shape_points.iloc[j - 1]['shape_pt_lon']
                     lat2, lon2 = shape_points.iloc[j]['shape_pt_lat'], shape_points.iloc[j]['shape_pt_lon']
                     if j < len(shape_points) // 2:  # Parte da ida
                         ida_distance += haversine(lat1, lon1, lat2, lon2)
@@ -103,32 +111,38 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
                 volta_lengths.append(volta_distance)
 
                 folium.PolyLine(
-                    locations=list(zip(shape_points['shape_pt_lat'], shape_points['shape_pt_lon'])),
+                    locations=list(
+                        zip(shape_points['shape_pt_lat'], shape_points['shape_pt_lon'])),
                     color=color,
                     weight=2.5,
                     opacity=0.8
                 ).add_to(mapa)
-                
+
                 # Adicionar marcadores de início e fim
                 start_point = shape_points.iloc[0]
                 end_point = shape_points.iloc[-1]
-                
+
                 folium.Marker(
-                    location=[start_point['shape_pt_lat'], start_point['shape_pt_lon']],
+                    location=[start_point['shape_pt_lat'],
+                              start_point['shape_pt_lon']],
                     popup='Início',
                     icon=folium.Icon(color='green', icon='play')
                 ).add_to(mapa)
 
                 folium.Marker(
-                    location=[end_point['shape_pt_lat'], end_point['shape_pt_lon']],
+                    location=[end_point['shape_pt_lat'],
+                              end_point['shape_pt_lon']],
                     popup='Fim',
                     icon=folium.Icon(color='red', icon='stop')
                 ).add_to(mapa)
 
                 # Filtrar paradas associadas à viagem
-                trip_ids_for_shape = filtered_trips[filtered_trips['shape_id'] == shape_id]['trip_id']
-                filtered_stop_times = stop_times[stop_times['trip_id'].isin(trip_ids_for_shape)]
-                stops_for_shape = stops[stops['stop_id'].isin(filtered_stop_times['stop_id'])]
+                trip_ids_for_shape = filtered_trips[filtered_trips['shape_id']
+                                                    == shape_id]['trip_id']
+                filtered_stop_times = stop_times[stop_times['trip_id'].isin(
+                    trip_ids_for_shape)]
+                stops_for_shape = stops[stops['stop_id'].isin(
+                    filtered_stop_times['stop_id'])]
 
                 # Contar pontos de ônibus por sentido (dividido pela metade como ida/volta)
                 ida_stops_count += len(stops_for_shape) // 2
@@ -139,17 +153,20 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
         # Exibir os comprimentos de ida e volta
         subheader("Comprimento das Linhas por Sentido")
         for index, (ida, volta) in enumerate(zip(ida_lengths, volta_lengths)):
-            write(f"Rota {index + 1}: Ida - {ida:.2f} Km, Volta - {volta:.2f} Km")
+            write(
+                f"Rota {index + 1}: Ida - {ida:.2f} Km, Volta - {volta:.2f} Km")
 
         # Exibir contagem de pontos de ônibus
         subheader("Número de Pontos de Ônibus por Sentido")
         write(f"Total de pontos de ônibus na Ida: {ida_stops_count}")
         st.write(f"Total de pontos de ônibus na Volta: {volta_stops_count}")
 
-        # Calcular a distância ideal usando o primeiro e último ponto das rotas
         ideal_distance = 0
-         shape_id in selected_shape_ids:
-            shape_points = shapes[shapes['shape_id'] == shape_id].sort_values(by='shape_pt_sequence')
+
+
+        for shape_id in selected_shape_ids:
+            shape_points = shapes[shapes['shape_id'] == shape_id].sort_values(
+                by='shape_pt_sequence')
             if not shape_points.empty:
                 start_point = shape_points.iloc[0]
                 end_point = shape_points.iloc[-1]
@@ -163,8 +180,10 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
         if total_real_distance > 0:
             ge = (2 * ideal_distance) / total_real_distance
             subheader("Eficiência Operacional (Ge)")
-            write(f"Distância ideal (ida e volta): {2 * ideal_distance:.2f} Km")
-            write(f"Distância real percorrida (ida e volta): {total_real_distance:.2f} Km")
+            write(
+                f"Distância ideal (ida e volta): {2 * ideal_distance:.2f} Km")
+            write(
+                f"Distância real percorrida (ida e volta): {total_real_distance:.2f} Km")
             write(f"Eficiência Operacional (Ge): {ge:.2f}")
 
             # Cálculo do Índice de Ineficiência (Ii)
@@ -174,6 +193,7 @@ def main(gtfs_zip_path, extract_to='gtfs_data'):
 
         else:
             write("Erro ao calcular a distância ideal. Verifique os dados de rota.")
+
 
 def shaker(m, b, h, l, omega, modulo_e, t, f_0, x0=0, dx0=0):
     """ Essa função calcula a resposta de uma viga submetida a um shaker.
@@ -325,8 +345,10 @@ def calcular_r2(y_real, y_predito):
 
 def analise_inversa_martelo_impacto(m, c, f, k, dano):
     x_values = np.linspace(0, 5, 200)
-    y_sem_dano = [martelo_impacto_resposta_tempo(f, c, k, m, t) for t in x_values]
-    y_com_dano = [martelo_impacto_resposta_tempo(f, c, k*(1-dano), m, t) for t in x_values]
+    y_sem_dano = [martelo_impacto_resposta_tempo(
+        f, c, k, m, t) for t in x_values]
+    y_com_dano = [martelo_impacto_resposta_tempo(
+        f, c, k*(1-dano), m, t) for t in x_values]
 
     k_novo = list(np.random.uniform(1500*(1-0.6), 2000, 2000))
     kk = 0
@@ -334,7 +356,8 @@ def analise_inversa_martelo_impacto(m, c, f, k, dano):
     y = None
 
     for i, k_val in enumerate(k_novo):
-        y_new = [martelo_impacto_resposta_tempo(f, c, k_val, m, t) for t in x_values]
+        y_new = [martelo_impacto_resposta_tempo(
+            f, c, k_val, m, t) for t in x_values]
         r2 = calcular_r2(y_com_dano, y_new)
         if r2 > r2_final:
             kk = k_val
@@ -349,7 +372,8 @@ def analise_inversa_martelo_impacto(m, c, f, k, dano):
     fig, ax = plt.subplots()
     ax.plot(x_values, y_sem_dano, label='Experimento s/ dano', color='green')
     ax.plot(x_values, y_com_dano, label='Experimento c/ dano', color='red')
-    ax.plot(x_values, y, label=f'Identificação rigidez k={kk:.2f}, r²={r2_final:.4e}', linestyle='--', color='blue')
+    ax.plot(x_values, y,
+            label=f'Identificação rigidez k={kk:.2f}, r²={r2_final:.4e}', linestyle='--', color='blue')
 
     ax.set_xlabel('t (s)')
     ax.set_ylabel('x (m)')
@@ -652,6 +676,7 @@ def quinhao_de_carga(row, ai_soma, aix_soma, aiy_soma, e_x, e_y):
     """
     # Exemplo simplificado: proporcional à área da parede
     return (row['area (m2)'] / ai_soma) * 100
+
 
 def projeto_paredes_compressao(dados_parede_aux, gamma_f, gamma_w, f_pk, g, q, g_wall, n_pavtos, x_total, y_total, tipo_argamassa):
     """
