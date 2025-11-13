@@ -32,7 +32,7 @@ def handle_fsarmado():
         gamma_c = float(data.get('cofconc1', 0))
         gamma_s = float(data.get('cofaco1', 0))
         m_sd = float(data.get('fletor1', 0))
-        v_sd = float(data.get('corte', 0))
+        v_sd = float(data.get('corte1', 0))
         cob = float(data.get('tamanho1', 0))
         phi_est = float(data.get('estribo1', 0)) / 1000
         d_max = float(data.get('fletor1', 0)) / 1000
